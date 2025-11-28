@@ -14,3 +14,5 @@ In this course, we can use Blink Labs VPN as an example project. We will see how
 - Apollo: https://github.com/Salvionied/apollo - this is the tx-building library (e.g. the "Mesh" of Go)
 - Adder: https://github.com/blinklabs-io/adder - indexer
     - Starter Kit: https://github.com/blinklabs-io/adder-library-starter-kit
+- Cardano Up: https://github.com/blinklabs-io/cardano-up
+- Cobra: https://github.com/spf13/cobra
