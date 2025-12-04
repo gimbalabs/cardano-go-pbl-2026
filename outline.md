@@ -9,6 +9,7 @@ Here's some background knowledge about Cardano development. If you're experience
 4. I understand why Apollo was built and what problems it solves.
 5. I understand why Adder was built and what problems it solves.
 6. I understand why Cardano Up was built and what problems it solves.
+7. I know how this course works and I'm ready to get my hands dirty.
 
 ## 101 - Interacting with the Cardano Node
 Show devs their options for accessing a Cardano Node, and support them to get at least one option working. Then, complete some basic operations.
@@ -50,11 +51,12 @@ In Module 201, we learned about how to index the blockchain as transactions happ
 ## 203 - Applications and Smart Contracts
 Now that you know how to read blockchain data and build basic transactions, you're ready to build some interesting applications! Let's investigate a variety of transactions that allow us to interact with smart contracts. When we do, we'll use Adder to watch the results of these transactions.
 
-1. I can build a transaction that mints or burns tokens with a native script.
-2. I can build a transaction that mints or burns tokens with a validator script.
-3. I can build a transaction that unlocks tokens from a validator script.
-4. I can build a transaction that writes datum to a new UTxO.
-5. I can build a transaction that specifies a redeemer.
+1. I can compare types written in Aiken, blueprint files, and Go code.
+2. I can build a transaction that mints or burns tokens with a native script.
+3. I can build a transaction that mints or burns tokens with a validator script.
+4. I can build a transaction that unlocks tokens from a validator script.
+5. I can build a transaction that writes datum to a new UTxO.
+6. I can build a transaction that specifies a redeemer.
 
 ## 204 - Serializing Data
 If you made it this far, we love you. And we'd like you to understand some details about how data is stored on the blockchain.
@@ -69,17 +71,20 @@ If you made it this far, we love you. And we'd like you to understand some detai
 ## 301 - What to do when none of the above actually works
 
 1. I can find and fix bugs in my application.
-3. I can use use Go Profiler and the debug port to diagnose bugs.
-4. I know where to go for help.
+2. I can use use Go Profiler and the debug port to diagnose bugs.
+3. I know where to go for help.
 
 ## 302 - Contributing
 
 1. I can make a PR to Blinklabs repository.
-
-
 
 ## 099 - Golang BBK
 Course modules for Cardano people who don't know Go yet. This will be a series of mini-projects that we build while updating Cardano Go PBL.
 
 1. I can write a command-line interface using the Cobra Go library.
 2. I can use Fiber to build an API.
+3. Debugging and type compatibility in Go
+
+
+## Course Glossary
+
