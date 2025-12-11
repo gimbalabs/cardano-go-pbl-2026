@@ -1,6 +1,6 @@
 # Cardano Go Development Glossary
 
-A glossary of terms used throughout the Cardano Go PBL (Project-Based Learning) Course). All definitions relate directly to Cardano, Go, Cardano-Go tooling, and the concepts required by the outline.
+A glossary of terms used throughout the Cardano Go PBL (Project-Based Learning) Course. All definitions relate directly to Cardano, Go, Cardano-Go tooling, and the concepts required by the outline.
 
 ---
 
@@ -333,4 +333,3 @@ A programmatic wallet for:
 * signing,
 * generating addresses,
 * listing UTxOs.
-
