@@ -51,3 +51,13 @@ Provide a clear structure for contributors, document project progress, and serve
 * [Andamio course](https://app.andamio.io/course/fd28cf17d1869bcb1f1f3ceaa7daf02d14358ba74691fd679ba3b633)
 * Partner [Blinklabs.io](https://blinklabs.io/)
 * [Funding source Project Catalyst Proposal](https://projectcatalyst.io/funds/13/cardano-open-developers/decentralized-domain-name-system-dns-marketplace-powered-by-cardano-and-handshake-blockchains)
+
+
+Query
+
+```
+  curl -X POST http://localhost:4000/api/v0/courses/import \
+    -H "Content-Type: application/json" \
+    -H "Authorization: Bearer <your-jwt>" \
+    -d @your-course-content.json
+```

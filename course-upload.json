@@ -1,0 +1,712 @@
+{
+  "course_nft_policy_id": "fd28cf17d1869bcb1f1f3ceaa7daf02d14358ba74691fd679ba3b633",
+  "modules": [
+    {
+      "module_code": "100",
+      "title": "Prerequisites + Tools of Cardano Go Development",
+      "description": "Here is some background knowledge about Cardano development. If you are experienced with Go but new to Cardano, this is the right place. Lessons 100.3 through 100.6 are organized around problem statements, introducing some of the libaries we will use in this course and why there were built.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I know enough about Cardano to start this course.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I understand the essentials of how Ouroboros works.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "I understand why Bursa was built and what problems it solves.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 4,
+          "slt_text": "I understand why Apollo was built and what problems it solves.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 5,
+          "slt_text": "I understand why Adder was built and what problems it solves.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 6,
+          "slt_text": "I understand why Cardano Up was built and what problems it solves.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 7,
+          "slt_text": "I know how this course works and I'm ready to get my hands dirty.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "100",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "101",
+      "title": "Interacting with the Cardano Node",
+      "description": "Show devs their options for accessing a Cardano Node, and support them to get at least one option working. Then, complete some basic operations.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I can run the gOuroboros Starter Kit.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I can fetch specific blocks from a remote Cardano Node using Node-to-Node communication.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "I can check sync state of the blockchain from a Cardano Node using either Node-to-Node or Node-to-Client communication.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 4,
+          "slt_text": "I can fetch information about the Node's mempool contents.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "101",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "102",
+      "title": "Building Simple Transactions",
+      "description": "Learn the essentials of transaction building. When we are building transactions, we will have to query the blockchain for some basic information; this will be covered in lesson 102.2 and reviewed each time we build a new transaction.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I can create a wallet with Bursa.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I can build a simple transaction with Apollo.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "I can sign a transaction manually and programmatically.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 4,
+          "slt_text": "I can submit a transaction to a node with gOuroboros.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 5,
+          "slt_text": "I can set a validity interval for a transaction.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 6,
+          "slt_text": "I can add simple metadata to a transaction.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "102",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "201",
+      "title": "Reacting to Chain Events",
+      "description": "To build a dapp, you will need to do more than just build transactions. In Modules 201, 202 and 203, we investigate the rest of the Cardano application stack. In this module, you will learn how to monitor what is happening on the blockchain by watching the chain and filtering events.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I can run the Adder Starter Kit.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I can configure Adder to connect to a Cardano Node.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "I can filter by event type.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 4,
+          "slt_text": "I can filter transactions by address.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 5,
+          "slt_text": "I can filter transactions by policy id.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 6,
+          "slt_text": "I can filter blocks by pool id.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "201",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "202",
+      "title": "Querying the Blockchain",
+      "description": "In Module 201, we learned about how to index the blockchain as transactions happen. Sometimes you need to view global or historical blockchain data that is not indexed by your app.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I understand the role of an indexer and practical concerns for using one.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I understand the limits of an event handler and when I need a more general query.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "I can store and retrieve data using Adder.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 4,
+          "slt_text": "I can select the right query provider for my application.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 5,
+          "slt_text": "I can enrich event data with query data.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "202",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "203",
+      "title": "Applications and Smart Contracts",
+      "description": "Now that you know how to read blockchain data and build basic transactions, you are ready to build some interesting applications! Let us investigate a variety of transactions that allow us to interact with smart contracts. When we do, we will use Adder to watch the results of these transactions.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I can compare types written in Aiken, blueprint files, and Go code.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I can build a transaction that mints or burns tokens with a native script.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "I can build a transaction that mints or burns tokens with a validator script.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 4,
+          "slt_text": "I can build a transaction that unlocks tokens from a validator script.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 5,
+          "slt_text": "I can build a transaction that writes datum to a new UTxO.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 6,
+          "slt_text": "I can build a transaction that specifies a redeemer.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "203",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "204",
+      "title": "Serializing Data",
+      "description": "If you made it this far, we love you. And we would like you to understand some details about how data is stored on the blockchain.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I can read datums and redeemers from deserialized CBOR.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I can compile a parameterized validator script.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "I can read a transaction event that includes a smart contract interaction.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 4,
+          "slt_text": "I can manipulate and understand deserialized CBOR.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 5,
+          "slt_text": "I can read a protobuf spec to understand standardized data.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 6,
+          "slt_text": "I can reference the CDDL to understand what's in transaction CBOR.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "204",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "301",
+      "title": "What to do when none of the above actually works",
+      "description": "Debugging and troubleshooting strategies for Cardano Go development.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I can find and fix bugs in my application.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I can use use Go Profiler and the debug port to diagnose bugs.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "I know where to go for help.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "301",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "302",
+      "title": "Contributing",
+      "description": "Learn how to contribute to the Blinklabs ecosystem and Cardano Go projects.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I can make a PR to Blinklabs repository.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "302",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    },
+    {
+      "module_code": "099",
+      "title": "Golang BBK",
+      "description": "Course modules for Cardano people who do not know Go yet. This will be a series of mini-projects that we build while updating Cardano Go PBL.",
+      "introduction": {
+        "title": "Introduction",
+        "content_json": {
+          "type": "doc",
+          "content": []
+        }
+      },
+      "slts": [
+        {
+          "module_index": 1,
+          "slt_text": "I can write a command-line interface using the Cobra Go library.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 2,
+          "slt_text": "I can use Fiber to build an API.",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        },
+        {
+          "module_index": 3,
+          "slt_text": "Debugging and type compatibility in Go",
+          "lesson": {
+            "title": "lesson title",
+            "content_json": {
+              "type": "doc",
+              "content": []
+            }
+          }
+        }
+      ],
+      "assignment": {
+        "assignment_code": "099",
+        "title": "Assignment Title",
+        "description": "Optional assignment description"
+      }
+    }
+  ]
+}

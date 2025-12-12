@@ -76,7 +76,7 @@ If you made it this far, we love you. And we'd like you to understand some detai
 
 ## 302 - Contributing
 
-1. I can make a PR to Blinklabs repository.
+1. I can make a PR to Blink Labs repository.
 
 ## 099 - Golang BBK
 Course modules for Cardano people who don't know Go yet. This will be a series of mini-projects that we build while updating Cardano Go PBL.
