@@ -1,0 +1,258 @@
+[
+  {
+    "event_type": "chainsync.transaction",
+    "timestamp": "2025-12-15 12:15:31",
+    "block_number": 12779795,
+    "slot_number": 174234640,
+    "transaction_index": 14,
+    "transaction_hash": "26b960c4b4189ab31e37867b0c2eebc295e4e74757d8e4f99a80033adefb2624",
+    "fee": 1086017,
+    "ttl": 174245401,
+    "minswap_type": "V2 Harvest reward",
+    "metadata": {
+      "674": {
+        "msg": "Minswap: V2 Harvest reward",
+        "extraData": "Complex farming reward data with multiple token pairs"
+      }
+    },
+    "inputs_count": 6,
+    "outputs_count": 7,
+    "sample_outputs": [
+      {
+        "address": "addr1wxc45xspppp73takl93mq029905ptdfnmtgv6g7cr8pdyqgvks3s8",
+        "amount": 2167930,
+        "note": "Harvested LP token #1"
+      },
+      {
+        "address": "addr1qxkmr0m22xeqludcg5rjdmecjxasu9fat0680qehtcsnftaadgykewa9ufvegeuca9yyq03d9v7ea2y2zthgu7hfgjtsddp6gr",
+        "amount": 2023170,
+        "assets": [
+          {
+            "policy_id": "d195ca7db29f0f13a00cac7fca70426ff60bad4e1e87d3757fae8484",
+            "tokens": {
+              "6876414441": 400662438,
+              "6876494e4459": 38472273,
+              "68764d494e": 6116247725,
+              "68764e5458": 401436230
+            }
+          }
+        ],
+        "note": "Reward tokens"
+      },
+      {
+        "address": "addr1qx993pyf22nxdt69lfa2vwqppsf6tzx5rxezfta5zm56mdx8la5uq8ekarqrn4hayxp05zzrlehgkkxf9u53257stw6qjnavwh",
+        "amount": 2731760031,
+        "note": "Change output"
+      }
+    ],
+    "reference_inputs": [
+      "a598ac624f82abf6e49a6f3562489e373b18f8f6063620f2c905a56aadf91c5a#0"
+    ],
+    "redeemers_count": 5,
+    "note": "Liquidity farming reward harvest - user claiming rewards from multiple pools"
+  },
+  {
+    "event_type": "chainsync.transaction",
+    "timestamp": "2025-12-15 12:15:52",
+    "block_number": 12779796,
+    "slot_number": 174234661,
+    "transaction_index": 2,
+    "transaction_hash": "a40bafd48cd36b22e648eba4104d75d05e32db967a571cdd417eb0bef639c442",
+    "fee": 274093,
+    "ttl": 174245443,
+    "minswap_type": "MasterChef",
+    "metadata": {
+      "674": {
+        "msg": "Minswap: MasterChef"
+      }
+    },
+    "inputs_count": 4,
+    "outputs_count": 4,
+    "key_outputs": [
+      {
+        "address": "addr1qx993pyf22nxdt69lfa2vwqppsf6tzx5rxezfta5zm56mdx8la5uq8ekarqrn4hayxp05zzrlehgkkxf9u53257stw6qjnavwh",
+        "amount": 402179558,
+        "assets": [
+          {
+            "policy_id": "29d222ce763455e3d7a09a665ce554f00ac89d2e99a1a83d267170c6",
+            "asset_name": "4d494e",
+            "amount": 6116247725,
+            "note": "MIN token"
+          },
+          {
+            "policy_id": "533bb94a8850ee3ccbe483106489399112b74c905342cb1792a797a0",
+            "asset_name": "494e4459",
+            "amount": 38472273,
+            "note": "INDY token"
+          },
+          {
+            "policy_id": "edfd7a1d77bcb8b884c474bdc92a16002d1fb720e454fa6e99344479",
+            "asset_name": "4e5458",
+            "amount": 401436230,
+            "note": "NTX token"
+          }
+        ]
+      },
+      {
+        "address": "addr1qxkmr0m22xeqludcg5rjdmecjxasu9fat0680qehtcsnftaadgykewa9ufvegeuca9yyq03d9v7ea2y2zthgu7hfgjtsddp6gr",
+        "amount": 59456362587,
+        "note": "ADA return"
+      },
+      {
+        "address": "addr1qxkmr0m22xeqludcg5rjdmecjxasu9fat0680qehtcsnftaadgykewa9ufvegeuca9yyq03d9v7ea2y2zthgu7hfgjtsddp6gr",
+        "amount": 4478090,
+        "assets_count": 18,
+        "note": "Multi-token output with 18 different tokens including USDC, USDT, ETH, MIN, INDY, and various other DeFi tokens"
+      }
+    ],
+    "note": "MasterChef staking/farming operation - managing rewards and token distributions"
+  },
+  {
+    "event_type": "chainsync.transaction",
+    "timestamp": "2025-12-15 12:15:52",
+    "block_number": 12779796,
+    "slot_number": 174234661,
+    "transaction_index": 4,
+    "transaction_hash": "bb27ab54030f35c273ee2f3ead786260c9d4912b69d8db16572c43e90e710c2a",
+    "fee": 735331,
+    "ttl": 174234820,
+    "minswap_type": "Order Executed",
+    "metadata": {
+      "674": {
+        "msg": "Minswap: Order Executed"
+      }
+    },
+    "inputs_count": 5,
+    "outputs_count": 5,
+    "swap_details": {
+      "from_token": {
+        "policy_id": "0691b2fecca1ac4f53cb6dfb00b7013e561d1f34403b957cbb5af1fa",
+        "asset_name": "4e49474854",
+        "asset_name_ascii": "NIGHT",
+        "amount_in": "~6.25 billion NIGHT tokens"
+      },
+      "to_token": {
+        "amount_out": "ADA",
+        "estimate": "~1.6 ADA received"
+      }
+    },
+    "key_outputs": [
+      {
+        "address": "addr1qxutwzs5ffz7uyq6gunt29rwhn5x6pn4gk2w43eqla336hhesw63xanc257v02y20paf4pqk5afl65mpucl6xct06rds5rn92n",
+        "amount": 2000000,
+        "assets": [
+          {
+            "policy_id": "0691b2fecca1ac4f53cb6dfb00b7013e561d1f34403b957cbb5af1fa",
+            "asset_name": "NIGHT",
+            "amount": 3213999667
+          }
+        ]
+      },
+      {
+        "address": "addr1qy2w0uhw0ltdn93mhcv022dq9chuewzzx8cdplv8z90kymkx3eh58dx7tepcmesh3fxfaxzx9g3sxm5q0zmn3n2fc9sqn9u22h",
+        "amount": 2000000,
+        "assets": [
+          {
+            "policy_id": "0691b2fecca1ac4f53cb6dfb00b7013e561d1f34403b957cbb5af1fa",
+            "asset_name": "NIGHT",
+            "amount": 3036173208
+          }
+        ]
+      },
+      {
+        "address": "addr1z84q0denmyep98ph3tmzwsmw0j7zau9ljmsqx6a4rvaau66j2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pq777e2a",
+        "amount": 1669337976265,
+        "assets": [
+          {
+            "policy_id": "0691b2fecca1ac4f53cb6dfb00b7013e561d1f34403b957cbb5af1fa",
+            "asset_name": "NIGHT",
+            "amount": 10774144834183,
+            "note": "Liquidity pool reserves"
+          },
+          {
+            "policy_id": "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
+            "asset_name": "4d5350",
+            "asset_name_ascii": "MSP",
+            "amount": 1,
+            "note": "Minswap pool NFT"
+          }
+        ]
+      }
+    ],
+    "reference_inputs": [
+      "0dc17712e37a4e741767db2f90d4ffbf69faf88b9bed4c47864f7bd912924bea#0",
+      "cf4ecddde0d81f9ce8fcc881a85eb1f8ccdaf6807f03fea4cd02da896a621776#0",
+      "2536194d2a976370a932174c10975493ab58fd7c16395d50e62b7c0e1949baea#0",
+      "d46bd227bd2cf93dedd22ae9b6d92d30140cf0d68b756f6608e38d680c61ad17#0"
+    ],
+    "withdrawals": {
+      "stake17y02a946720zw6pw50upt2arvxsvvpvaghjtl054h0f0gjsfyjz59": 0
+    },
+    "note": "DEX swap execution - trading NIGHT tokens for ADA"
+  },
+  {
+    "event_type": "chainsync.transaction",
+    "timestamp": "2025-12-15 12:15:52",
+    "block_number": 12779796,
+    "slot_number": 174234661,
+    "transaction_index": 5,
+    "transaction_hash": "271136d4ab5996eea3dd3d975eec9e7c92e1f1f847063460ddccf9967474e3c8",
+    "fee": 664805,
+    "ttl": 174234820,
+    "minswap_type": "Order Executed",
+    "metadata": {
+      "674": {
+        "msg": "Minswap: Order Executed"
+      }
+    },
+    "inputs_count": 3,
+    "outputs_count": 3,
+    "swap_details": {
+      "from_token": "ADA",
+      "to_token": {
+        "policy_id": "279c909f348e533da5808898f87f9a14bb2c3dfbbacccd631d927a3f",
+        "asset_name": "534e454b",
+        "asset_name_ascii": "SNEK",
+        "amount_received": 2904218
+      }
+    },
+    "key_outputs": [
+      {
+        "address": "addr1q8dnphdkg54mwaxlwjauv6jxygm8auq0gcslt8twvuskqtdekyc92uq94t8tp365g8ks7g52ehawl25lzjnu404gx6hqszd4l3",
+        "amount": 2000000,
+        "assets": [
+          {
+            "policy_id": "279c909f348e533da5808898f87f9a14bb2c3dfbbacccd631d927a3f",
+            "asset_name": "SNEK",
+            "amount": 2904218
+          }
+        ],
+        "note": "User received SNEK tokens"
+      },
+      {
+        "address": "addr1z84q0denmyep98ph3tmzwsmw0j7zau9ljmsqx6a4rvaau66j2c79gy9l76sdg0xwhd7r0c0kna0tycz4y5s6mlenh8pq777e2a",
+        "amount": 3163523378271,
+        "assets": [
+          {
+            "policy_id": "279c909f348e533da5808898f87f9a14bb2c3dfbbacccd631d927a3f",
+            "asset_name": "SNEK",
+            "amount": 1232817797,
+            "note": "Liquidity pool reserves"
+          },
+          {
+            "policy_id": "f5808c2c990d86da54bfc97d89cee6efa20cd8461616359478d96b4c",
+            "asset_name": "4d5350",
+            "asset_name_ascii": "MSP",
+            "amount": 1,
+            "note": "Minswap pool NFT"
+          }
+        ],
+        "note": "Minswap liquidity pool"
+      }
+    ],
+    "withdrawals": {
+      "stake17y02a946720zw6pw50upt2arvxsvvpvaghjtl054h0f0gjsfyjz59": 0
+    },
+    "note": "DEX swap execution - trading ADA for SNEK tokens"
+  }
+]
