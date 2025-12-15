@@ -16,3 +16,7 @@ In this course, we can use Blink Labs VPN as an example project. We will see how
     - Starter Kit: https://github.com/blinklabs-io/adder-library-starter-kit
 - Cardano Up: https://github.com/blinklabs-io/cardano-up
 - Cobra: https://github.com/spf13/cobra
+
+note Andrew 15-12-25. I've been playing with Adder today and added some sample go code. 
+A cool idea for a lesson could be for the user to create a listening event handler that searches for some particular text in a transaction metadata.
+Then get them to submit a transaction with the matching text whilst their instance of Adder is running, which logs out/captures the transaction
