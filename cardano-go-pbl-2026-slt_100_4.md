@@ -1,4 +1,4 @@
-# SLT 100.4: . I understand why Apollo was built and what problems it solves
+# SLT 100.4: I understand why Apollo was built and what problems it solves
 
 ## Apollo – Background and Purpose
 
@@ -13,7 +13,7 @@ This lesson explains **why Apollo exists**, **what problems it solves**, and **h
 Before this lesson, you should:
 
 - Understand the basic Cardano UTxO model
-- Be comfortable reading Go code (even if you cannot yet write it fluently)
+- Be **comfortable reading** Go code (even if you cannot yet write it fluently)
 - Have a general sense of what a blockchain transaction is
 
 No coding is required in this lesson.
@@ -36,24 +36,11 @@ While the Cardano CLI can build transactions step by step, doing this programmat
 
 **Apollo exists to bridge this gap.**
 
-It lets developers express *transaction intent* (who pays whom, how much, under what conditions) while handling the mechanical details automatically.
+It lets developers express *transaction intent* (who pays whom, how much, under what conditions) while handling the  details automatically.
 
 ---
 
 ## Where Apollo Fits in the Cardano Stack
-
-Conceptually, Apollo sits here:
-
-- **Below**: Wallet UIs, APIs, CLIs
-- **Above**: Raw CBOR, protocol parameters, ledger rules
-- **Alongside**: Other Cardano infrastructure libraries (Bursa, Adder)
-
-You can think of Apollo as a **transaction construction engine**:
-
-- It does not manage wallets for you
-- It does not run a node
-- It does not store keys long-term
-- It focuses on *correct transaction assembly*
 
 To make this more concrete, the diagram below shows how Apollo fits into a typical Cardano Go developer stack:
 
@@ -91,6 +78,19 @@ graph TD
 ```
 
 This diagram highlights Apollo’s role as the **bridge between application logic and the Cardano ledger**: applications express intent, Apollo constructs valid transactions, and network services provide the data and submission path needed to interact with the blockchain.
+
+Conceptually, Apollo sits here:
+
+- **Below**: Wallet UIs, APIs, CLIs
+- **Above**: Raw CBOR, protocol parameters, ledger rules
+- **Alongside**: Other Cardano infrastructure libraries (Bursa, Adder)
+
+You can think of Apollo as a **transaction construction engine**:
+
+- It does not manage wallets for you
+- It does not run a node
+- It does not store keys long-term
+- It focuses on *correct transaction assembly*
 
 ---
 
@@ -163,7 +163,7 @@ At this stage, you do **not** need to understand every function call. Instead, n
 
 The complexity still exists—but it is handled *by the library*, according to protocol rules.
 
-This contrast is the core motivation for Apollo.
+This contrast is the core motivation for using Apollo.
 
 ---
 
@@ -180,7 +180,7 @@ You describe *what* you want the transaction to do:
 - Attach metadata
 - Require these signers
 
-Apollo handles *how* that becomes a valid ledger transaction.
+Apollo handles *how* all that becomes a valid ledger transaction.
 
 ---
 
@@ -235,6 +235,15 @@ Apollo is a **developer library**, not a wallet.
 
 ## Key Concepts You Will Use Later
 
+Here is the code again for referenece:
+
+```go
+tx, err := apolloBuilder.
+    SetWalletFromBech32(senderAddr).
+    PayToAddress(recipientAddr, 2_000_000).
+    Complete()
+```
+
 You will encounter these ideas repeatedly in later lessons:
 
 - **Chain Context**  
@@ -259,7 +268,7 @@ Cardano’s tooling ecosystem has historically been CLI-first and Haskell-centri
 
 Apollo makes it possible to:
 
-- Build Cardano transactions natively in Go 
+- Build Cardano transactions natively in Go
 - Integrate Cardano logic into Go services and CLIs
 - Learn Cardano concepts without first learning Haskell or ledger internals
 
