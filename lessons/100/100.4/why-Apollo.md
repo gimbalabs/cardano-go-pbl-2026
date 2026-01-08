@@ -85,6 +85,12 @@ Conceptually, Apollo sits here:
 - **Above**: Raw CBOR, protocol parameters, ledger rules
 - **Alongside**: Other Cardano infrastructure libraries (Bursa, Adder)
 
+```mermaid
+flowchart TB
+ Above( Raw CBOR, protocol parameters, ledger rules) --- Core(Apollo, Bursa, Adder)
+ Core --- Below("Wallet UIs, APIs, CLIs")
+```
+
 You can think of Apollo as a **transaction construction engine**:
 
 - It does not manage wallets for you
