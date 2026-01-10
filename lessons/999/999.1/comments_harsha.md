@@ -2,5 +2,5 @@
 ```
 ls -la $(go env GOPATH)/bin/cobra-cli // Check the installation path for cobra-cli
 echo $PATH // To check if the path is already there
-export PATH=$PATH:/Users/gzero/go/bin // Add to the path if it's not already there
+export PATH=$PATH:/path/from/step/one // Add to the path if it's not already there
 ```
