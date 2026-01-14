@@ -28,6 +28,8 @@ Do you have Go installed
 ```bash
 go version
 ```
+> note
+> if go isn't installed, Visit golang.org for installation instructions and the Tour of Go for a quick introduction to the language.
 
 ### Step 1: Initialize Your Project
 
