@@ -2,7 +2,9 @@
 
 ## Apollo – Background and Purpose
 
-Apollo is a Go library for building Cardano transactions. It sits between low-level Cardano transaction formats (CBOR, protocol parameters, UTxOs) and higher-level developer tooling, making it possible to construct valid transactions without manually assembling every ledger detail.
+Apollo is a Go library for building Cardano transactions. It abstracts away the low-level transaction formats and protocol mechanics, giving developers a structured way to assemble, sign, and submit transactions without dealing directly with raw CBOR or ledger internals.
+
+For Go developers, Apollo plays a role similar to cardano-cli, Mesh, or PyCardano—but is designed specifically for programmatic use inside Go applications.
 
 This lesson explains **why Apollo exists**, **what problems it solves**, and **how it fits into the Cardano Go ecosystem**.
 
@@ -12,11 +14,11 @@ This lesson explains **why Apollo exists**, **what problems it solves**, and **h
 
 Before this lesson, you should:
 
-- Understand the basic Cardano UTxO model
+- Understand the basic Cardano UTxO model (Where transactions are fundamental which consume inputs, have parameters, and produce outputs)
 - Be **comfortable reading** Go code (even if you cannot yet write it fluently)
 - Have a general sense of what a blockchain transaction is
 
-No coding is required in this lesson.
+No coding is required in this lesson. You do not need to understand smart contracts, Plutus, or on-chain validation details yet—this lesson focuses only on a board understanding of Apollo.
 
 ---
 
@@ -81,14 +83,14 @@ This diagram highlights Apollo’s role as the **bridge between application logi
 
 Conceptually, Apollo sits here:
 
-- **Below**: Wallet UIs, APIs, CLIs
-- **Above**: Raw CBOR, protocol parameters, ledger rules
-- **Alongside**: Other Cardano infrastructure libraries (Bursa, Adder)
+- **Below**: Raw CBOR, protocol parameters, ledger rules
+- **Above**: Wallet UIs, APIs, CLIs
+- **Alongside**: Other Cardano development libraries (Bursa, Adder)
 
 ```mermaid
 flowchart TB
- Above( Raw CBOR, protocol parameters, ledger rules) --- Core(Apollo, Bursa, Adder)
- Core --- Below("Wallet UIs, APIs, CLIs")
+Above("Wallet UIs, APIs, CLIs") --- Core(Apollo, Bursa, Adder)
+Core --- Below("Raw CBOR, protocol parameters, ledger rules")
 ```
 
 You can think of Apollo as a **transaction construction engine**:
@@ -154,10 +156,25 @@ This explicitness is powerful—but difficult to embed inside applications.
 With Apollo, the same intent can be expressed declaratively in Go:
 
 ```go
-tx, err := apolloBuilder.
-    SetWalletFromBech32(senderAddr).
+// 1) Choose network + data source (node, Ogmios, Blockfrost, etc.)
+builder := apollo.NewTxBuilder().
+    WithNetwork(apollo.Preprod).
+    WithChainContext(chainContext) // used to fetch protocol params + UTxOs
+
+// 2) Load spendable UTxOs for the sender (like `cardano-cli query utxo`)
+utxos := chainContext.UTxOsAtAddress(senderAddr)
+
+// 3) Build tx intent (outputs + change), then complete (fees, change, etc.)
+tx, err := builder.
+    FromAddress(senderAddr, utxos).
     PayToAddress(recipientAddr, 2_000_000).
+    ChangeTo(senderAddr).
     Complete()
+
+// 4) Sign + submit (or return signed tx)
+signed := tx.Sign(paymentSKey)
+txHash := chainContext.Submit(signed)
+
 ```
 
 At this stage, you do **not** need to understand every function call. Instead, notice what is different:
@@ -244,10 +261,25 @@ Apollo is a **developer library**, not a wallet.
 Here is the code again for referenece:
 
 ```go
-tx, err := apolloBuilder.
-    SetWalletFromBech32(senderAddr).
+// 1) Choose network + data source (node, Ogmios, Blockfrost, etc.)
+builder := apollo.NewTxBuilder().
+    WithNetwork(apollo.Preprod).
+    WithChainContext(chainContext) // used to fetch protocol params + UTxOs
+
+// 2) Load spendable UTxOs for the sender (like `cardano-cli query utxo`)
+utxos := chainContext.UTxOsAtAddress(senderAddr)
+
+// 3) Build tx intent (outputs + change), then complete (fees, change, etc.)
+tx, err := builder.
+    FromAddress(senderAddr, utxos).
     PayToAddress(recipientAddr, 2_000_000).
+    ChangeTo(senderAddr).
     Complete()
+
+// 4) Sign + submit (or return signed tx)
+signed := tx.Sign(paymentSKey)
+txHash := chainContext.Submit(signed)
+
 ```
 
 You will encounter these ideas repeatedly in later lessons:
