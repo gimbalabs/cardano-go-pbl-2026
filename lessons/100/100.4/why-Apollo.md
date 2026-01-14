@@ -221,21 +221,15 @@ This mirrors how Cardano transactions actually work: they are not 'sent' until a
 
 ### 3. Network-Aware by Design
 
-Apollo does not hard-code protocol rules.
+Apollo does not hard-code protocol rules. Instead, it relies on a pluggable ChainContext to supply network-specific data.
 
-Instead, it queries:
+A ChainContext can fetch (or provide) things like:
+    - protocol parameters
+    - UTxOs at addresses
+    - current tip / era info
+    - network configuration (mainnet vs testnet)
 
-- Protocol parameters
-- UTxOs at addresses
-- Network configuration
-
-This allows the same code to work across:
-
-- preprod
-- preview
-- mainnet
-
-(as long as the network context is configured correctly).
+Apollo supports multiple ChainContext implementations (Ogmios, Blockfrost, Maestro, UTxORPC, etc.), so the same transaction-building code can work across different environments.
 
 ---
 
