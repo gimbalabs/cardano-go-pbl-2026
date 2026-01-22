@@ -14,7 +14,7 @@ Here's some background knowledge about Cardano development. If you're experience
 ## 101 - Interacting with the Cardano Node
 Show devs their options for accessing a Cardano Node, and support them to get at least one option working. Then, complete some basic operations.
 
-1. I can run the gOuroboros Starter Kit.
+1. I can run the gOuroboros Starter Kit. (use demeter.run CLI)
 2. I can fetch specific blocks from a remote Cardano Node using Node-to-Node communication.
 3. I can check sync state of the blockchain from a Cardano Node using either Node-to-Node or Node-to-Client communication.
 4. I can fetch information about the Node's mempool contents.
