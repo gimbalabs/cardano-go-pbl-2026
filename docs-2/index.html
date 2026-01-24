@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Document</title>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+  <meta name="description" content="Description">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=1.0">
+  <link rel="stylesheet" href="//cdn.jsdelivr.net/npm/docsify@4/lib/themes/vue.css">
+</head>
+<body>
+  <div id="app"></div>
+<script>
+  window.$docsify = {
+    name: 'Cardano Go PBL 2026',
+    repo: '',
+
+    // Load docs/README.md as the homepage
+    homepage: 'README.md',
+
+    // Sidebar
+    loadSidebar: true,
+    subMaxLevel: 2,
+
+    // Nice routing
+    relativePath: false,
+
+    // Optional: keep a top navbar later if you want
+    // loadNavbar: true,
+
+    // Search plugin config (enabled by script tag below)
+    search: {
+      depth: 3,
+      noData: 'No results',
+      placeholder: 'Search'
+    }
+  }
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
+<script src="https://cdn.jsdelivr.net/npm/docsify/lib/plugins/search.min.js"></script>
+</body>
+</html>
