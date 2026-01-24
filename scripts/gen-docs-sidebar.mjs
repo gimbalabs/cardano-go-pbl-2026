@@ -39,38 +39,23 @@ function titleFromPath(p) {
 }
 
 // Build sidebar content. Links are relative to docs/ (hence ../)
+
 let out = '';
 out += `- Getting Started\n`;
 out += `  - [Home](README.md)\n`;
 for (const p of rootDocs) {
-    out += `  - [${titleFromPath(p)}](../${normalize(p)})\n`;
+    out += `  - [${titleFromPath(p)}](${normalize(p)})\n`;
 }
 
 out += `\n- Lessons\n`;
-
-// Group by top lesson number folder: lessons/100, lessons/102, etc.
-const groups = new Map();
 for (const p of lessonDocs) {
-    const parts = normalize(p).split('/');
-    // parts: ['lessons','100','100.4','README.md'] etc.
-    const group = parts[1] ?? 'lessons';
-    if (!groups.has(group)) groups.set(group, []);
-    groups.get(group).push(p);
-}
-
-const groupKeys = Array.from(groups.keys()).sort((a, b) => a.localeCompare(b, undefined, { numeric: true }));
-
-for (const g of groupKeys) {
-    out += `  - ${g}\n`;
-    for (const p of groups.get(g)) {
-        const label = normalize(p)
-            .replace(/^lessons\//, '')
-            .replace(/\.md$/i, '')
-            .replace(/\/README$/i, '')
-            .replace(/\/index$/i, '');
-
-        out += `    - [${label}](../${normalize(p)})\n`;
-    }
+    // Create a label like '100/100.1/Create-wallet-with-bursa' (no .md)
+    const label = normalize(p)
+        .replace(/^lessons\//, '')
+        .replace(/\.md$/i, '')
+        .replace(/\/README$/i, '')
+        .replace(/\/index$/i, '');
+    out += `  - [${label}](${normalize(p)})\n`;
 }
 
 const repoRoot = new URL('../..', import.meta.url).pathname;
