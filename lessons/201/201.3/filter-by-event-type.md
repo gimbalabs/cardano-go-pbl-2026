@@ -28,8 +28,9 @@ Here's what you'll do to filter by event type:
 
 1. Locate the event handler function in the code
 2. Add a condition to check the event type
-3. Run the modified indexer
-4. Observe filtered output in the terminal
+3. Comment out the status updates for cleaner output
+4. Run the modified indexer
+5. Experiment with different event types
 
 ## Step-by-Step Instructions
 
@@ -84,7 +85,37 @@ Your code should compile without errors when saved.
 
 ---
 
-### Step 3: Run the Filtered Indexer
+### Step 3: Comment Out the Status Updates (Optional but Recommended)
+
+**What to do:**
+Before running, locate the `updateStatus` function and where it's registered. You'll see code like this:
+
+```go
+func updateStatus(status input_chainsync.ChainSyncStatus) {
+    slog.Info(fmt.Sprintf("ChainSync status update: %v\n", status))
+}
+```
+
+This function is registered in the input options via `input_chainsync.WithStatusUpdateFunc(updateStatus)`.
+
+To see only your filtered events, comment out this line in the input options:
+
+```go
+inputOpts := []input_chainsync.ChainSyncOptionFunc{
+    input_chainsync.WithAutoReconnect(true),
+    input_chainsync.WithIntersectTip(true),
+    // input_chainsync.WithStatusUpdateFunc(updateStatus),  // Comment this out
+    input_chainsync.WithNetworkMagic(cfg.Magic),
+    input_chainsync.WithSocketPath(cfg.SocketPath),
+}
+```
+
+**Why it matters:**
+The `updateStatus` function logs chain synchronization status messages (like tip updates and sync progress) separately from blockchain events. While useful for debugging connection issues, these status messages can clutter your output when you're trying to focus on filtered events. Commenting it out gives you cleaner output showing only transactions or blocks.
+
+---
+
+### Step 4: Run the Filtered Indexer
 
 **What to do:**
 Open a terminal in your workspace and run the indexer:
@@ -95,15 +126,30 @@ go run ./cmd/adder-publisher
 
 **-- INSERT SCREENSHOT 3 HERE --**
 
+**Understanding the output:**
+Each transaction event logged to your terminal contains structured data about a Cardano transaction. Here's what you're seeing:
+
+- **Type**: `chainsync.transaction` — confirms this is a transaction event
+- **Timestamp**: When the event was received
+- **Context**: Block information including slot number and block hash where this transaction was included
+- **Payload**: The transaction data itself, including:
+  - Transaction hash (the unique identifier)
+  - Inputs (UTxOs being spent)
+  - Outputs (new UTxOs being created, with addresses and values)
+  - Fees paid
+  - Any metadata or script data
+
+The output may look dense at first—that's normal. In later lessons, you'll learn to extract specific fields from this data structure.
+
 **Why it matters:**
 Running the indexer with your filter lets you see only transaction events in the output, demonstrating that your filter is working correctly.
 
 **Expected result:**
-You should see only transaction events logged to the terminal. Block events will be silently ignored.
+You should see only transaction events logged to the terminal. Block events will be silently ignored. If you commented out the status updates, your output will be cleaner—showing only the events that pass your filter.
 
 ---
 
-### Step 4: Experiment with Different Event Types
+### Step 5: Experiment with Different Event Types
 
 **What to do:**
 Try filtering for block events instead. Change your filter condition:
@@ -123,6 +169,21 @@ func handleEvent(evt event.Event) error {
 Run the indexer again and observe the different output.
 
 **-- INSERT SCREENSHOT 4 HERE --**
+
+**Understanding the block output:**
+Block events have a different structure than transactions:
+
+- **Type**: `chainsync.block` — confirms this is a block event
+- **Context**: Information about where this block fits in the chain
+- **Payload**: Block-level data including:
+  - Block hash
+  - Slot number (when the block was produced)
+  - Block number (height in the chain)
+  - Issuer (the stake pool that produced this block, as a pool ID)
+  - Transaction count (how many transactions are in this block)
+  - Block size
+
+Notice that blocks appear less frequently than transactions—on preprod, roughly every 20 seconds. Each block contains multiple transactions, so filtering for blocks gives you a higher-level view of chain activity.
 
 **Why it matters:**
 Different event types contain different data structures. Block events show you slot numbers, block hashes, and issuer information. Understanding what each event type provides helps you choose the right filter for your application.
