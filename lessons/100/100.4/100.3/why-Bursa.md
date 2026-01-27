@@ -171,44 +171,91 @@ Keys used by **Constitutional Committee members**.
 This diagram shows **how one wallet is structured** and how a wallet UI can manage multiple wallets.
 
 ```
-Wallet UI (Eternl, Lace, CLI, etc.)
-├─ Wallet A (directory)
-│  └─ seed.txt
-│     └─ Root key (implicit)
-│        ├─ Account 0
-│        │  ├─ Payment
-│        │  │  ├─ paymentExtended.skey
-│        │  │  ├─ payment.skey
-│        │  │  ├─ payment.vkey
-│        │  │  └─ payment.addr
-│        │  │
-│        │  ├─ Stake
-│        │  │  ├─ stakeExtended.skey
-│        │  │  ├─ stake.skey
-│        │  │  ├─ stake.vkey
-│        │  │  └─ stake.addr
-│        │  │
-│        │  ├─ DRep
-│        │  │  ├─ drepExtended.skey
-│        │  │  ├─ drep.skey
-│        │  │  └─ drep.vkey
-│        │  │
-│        │  └─ Committee
-│        │     ├─ committee-cold-extended.skey
-│        │     ├─ committee-cold.skey
-│        │     ├─ committee-cold.vkey
-│        │     ├─ committee-hot-extended.skey
-│        │     ├─ committee-hot.skey
-│        │     └─ committee-hot.vkey
-│        │
-│        └─ Account 1 (same structure, different indices)
-│           └─ …
+Cardano Wallet Universe (one root key space)
+
+├─ Wallet A (mnemonic-backed; software wallet)
+│  ├─ seed.txt  (mnemonic → root key, implicit)
+│  │
+│  ├─ User Wallet Domain (what normal wallets expose)
+│  │  ├─ Account 0
+│  │  │  ├─ Payment keys
+│  │  │  │  ├─ paymentExtended.skey
+│  │  │  │  ├─ payment.skey
+│  │  │  │  ├─ payment.vkey
+│  │  │  │  └─ payment.addr
+│  │  │  │
+│  │  │  ├─ Stake keys
+│  │  │  │  ├─ stakeExtended.skey
+│  │  │  │  ├─ stake.skey
+│  │  │  │  ├─ stake.vkey
+│  │  │  │  └─ stake.addr
+│  │  │  │
+│  │  │  ├─ Addresses (derived combinations)
+│  │  │  │  ├─ Base address (payment + stake)
+│  │  │  │  ├─ Enterprise address (payment only)
+│  │  │  │  └─ Reward address (stake only)
+│  │  │  │
+│  │  │  ├─ Governance keys
+│  │  │  │  ├─ DRep
+│  │  │  │  │  ├─ drepExtended.skey
+│  │  │  │  │  ├─ drep.skey
+│  │  │  │  │  └─ drep.vkey
+│  │  │  │  │
+│  │  │  │  └─ Constitutional Committee
+│  │  │  │     ├─ committee-cold
+│  │  │  │     │  ├─ committee-cold-extended.skey
+│  │  │  │     │  ├─ committee-cold.skey
+│  │  │  │     │  └─ committee-cold.vkey
+│  │  │  │     │
+│  │  │  │     └─ committee-hot
+│  │  │  │        ├─ committee-hot-extended.skey
+│  │  │  │        ├─ committee-hot.skey
+│  │  │  │        └─ committee-hot.vkey
+│  │  │  │
+│  │  │  └─ (multiple payment / stake indices possible)
+│  │  │
+│  │  └─ Account 1
+│  │     └─ (same structure as Account 0)
+│  │
+│  ├─ Native Asset / Minting Domain
+│  │  └─ Policy keys
+│  │     ├─ policyExtended.skey
+│  │     ├─ policy.skey
+│  │     └─ policy.vkey
+│  │
+│  ├─ Stake Pool / Node Operator Domain
+│  │  ├─ Pool cold keys (long-term pool identity)
+│  │  │  ├─ poolColdExtended.skey
+│  │  │  ├─ poolCold.skey
+│  │  │  └─ poolCold.vkey
+│  │  │
+│  │  ├─ VRF keys (leader election)
+│  │  │  ├─ vrf.skey
+│  │  │  └─ vrf.vkey
+│  │  │
+│  │  ├─ KES keys (hot block-signing keys; rotate)
+│  │  │  ├─ kes.skey
+│  │  │  └─ kes.vkey
+│  │  │
+│  │  └─ Pool certificates
+│  │     └─ Operational certificate
+│  │        └─ binds KES key + pool cold key + counter + period
+│  │
+│  └─ Multi-signature / Script Domain
+│     ├─ Script definition (JSON)
+│     ├─ Script hash
+│     └─ Script address
 │
-├─ Wallet B (directory)
+├─ Wallet B (software wallet)
 │  └─ seed.txt → different mnemonic → different universe
 │
-└─ Wallet C (directory)
-   └─ hardware-backed (no seed.txt, signing proxy only)
+└─ Wallet C (hardware wallet)
+   ├─ Seed exists (generated and stored inside secure hardware)
+   ├─ Seed may be backed up by user (recovery words)
+   ├─ Private keys never leave device
+   ├─ Public keys and addresses are exported
+   └─ Signing requests are approved on-device
+
 ```
 
 ### Key invariants
@@ -391,6 +438,5 @@ Both the CLI and HTTP APIs operate on:
 
 ### Key Invariant
 
-> **Bursa does not invent new wallet concepts.
-It operationalizes the Cardano wallet model in a backend-friendly form.**
+> **Bursa operationalizes the Cardano wallet model in a backend-friendly form.**
 
