@@ -46,7 +46,10 @@ cobra-cli init
 
 **Why it matters:** The `cobra-cli` scaffolding tool generates the conventional file structure that all major Cobra projects follow. Starting with this structure means your CLI will be maintainable and familiar to other Go developers.
 
-**Expected result:** You should see a `cmd/` directory with `root.go` inside, plus a `main.go` at the project root.
+**Expected result:** 
+
+You should see a `cmd/` directory with `root.go` inside, plus a `main.go` at the project root.
+
 ![screenshot of repo structure](screenshots/2026-01-15-11-34-31.png)
 ---
 
