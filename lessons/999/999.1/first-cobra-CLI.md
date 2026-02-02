@@ -122,6 +122,7 @@ func init() {
 **What to do:** Enhance your greet command with flags:
 
 ```go
+package cmd
 import (
  "fmt"
  "github.com/spf13/cobra"
@@ -202,11 +203,30 @@ go run main.go greet --verbose World
 go run main.go greet -v -u -t 2 World
 ```
 
+You can see all flags and Go's excellent built in documentation by giving `go run main.go greet --help`.  You should see something like:
+
+```bash
+Greet someone by name
+
+Usage:
+  mycli greet [name] [flags]
+
+Flags:
+  -h, --help        help for greet
+  -t, --times int   Number of times to greet (default 1)
+  -u, --uppercase   Print name in uppercase
+
+Global Flags:
+  -v, --verbose   Enable verbose output
+
+```
 ---
 
 ### Step 6: Build Your Binary
 
 **What to do:**
+
+make sure you are in the directory with main.go
 
 ```bash
 go build -o mycli .
@@ -216,7 +236,7 @@ go build -o mycli .
 
 **Why this matters:** Building the binary turns your Go code into an executable program. This is what allows the CLI to run without `go run`, be placed on your `PATH`, shared with others, and used like any system command.
 
-**Expected result:** A standalone binary you can distribute and run anywhere Go supports.
+**Expected result:** A standalone binary you can distribute and run anywhere Go supports.  Try the help command `./mycli greet --help` and experiment with different combinations of flags. 
 
 ---
 
@@ -232,15 +252,21 @@ go build -o mycli .
 
 ### Issue: "cobra-cli: command not found"
 
-**Why it happens:** Go binaries install to `$GOPATH/bin`, which may not be in your PATH. **How to fix it:** Add `export PATH=$PATH:$(go env GOPATH)/bin` to your shell profile.
+**Why it happens:** Go binaries install to `$GOPATH/bin`, which may not be in your PATH.
+
+**How to fix it:** Add `export PATH=$PATH:$(go env GOPATH)/bin` to your shell profile.
 
 ### Issue: Flags not being recognized
 
-**Why it happens:** Flags must be registered in `init()`, which runs before `Execute()`. **How to fix it:** Ensure all `Flags()` calls are inside `init()` functions.
+**Why it happens:** Flags must be registered in `init()`, which runs before `Execute()`.
+
+**How to fix it:** Ensure all `Flags()` calls are inside `init()` functions.
 
 ### Issue: Arguments and flags getting confused
 
-**Why it happens:** Flags with values must use `=` or space correctly. **How to fix it:** Use `--times=3` or `--times 3`, not `--times3`.
+**Why it happens:** Flags with values must use `=` or space correctly. 
+
+**How to fix it:** Use `--times=3` or `--times 3`, not `--times3`.
 
 ## Tips from Experience
 
