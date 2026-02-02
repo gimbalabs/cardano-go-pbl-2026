@@ -175,7 +175,7 @@ fiber-api/
 ├── cmd/
 │   └── server/
 └── internal/
-└── api/
+│   └── api/
 
 ```
 
@@ -225,6 +225,7 @@ import (
     "github.com/gimbalabs/cardano-go-fiber-api/internal/api"
 )
 
+// Don't worry about the import error - We fix in next step when we create internal/api/routes.go
 // This import works because the module name in go.mod is
 // github.com/gimbalabs/cardano-go-fiber-api and internal/api
 // is inside the same module
@@ -342,6 +343,7 @@ If something is misaligned, Go will fail loudly here, which is helpful.
 ### Expected result
 
 The server starts successfully **without import errors**.
+![Fiber API start screen](screenshots/999_2_Fiber_starts_success.png)
 
 Visiting:
 
