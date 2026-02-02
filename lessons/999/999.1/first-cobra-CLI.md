@@ -39,10 +39,12 @@ go version
 mkdir mycli && cd mycli
 go mod init github.com/yourusername/mycli
 go install github.com/spf13/cobra-cli@latest
-cobra-cli --help (to check if installed and PATH )
+cobra-cli --help 
 cobra-cli init
 
 ```
+
+"cobra-cli --help" is to check if installed and PATH setup correctly
 
 **Why it matters:** The `cobra-cli` scaffolding tool generates the conventional file structure that all major Cobra projects follow. Starting with this structure means your CLI will be maintainable and familiar to other Go developers.
 
