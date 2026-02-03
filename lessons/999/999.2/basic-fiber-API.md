@@ -343,7 +343,7 @@ If something is misaligned, Go will fail loudly here, which is helpful.
 ### Expected result
 
 The server starts successfully **without import errors**.
-![Fiber API start screen](screenshots/999_2_Fiber_starts_success.png)
+![Fiber API start screen](screenshots/999_2_Fiber_starts_success.min.png)
 
 Visiting:
 
