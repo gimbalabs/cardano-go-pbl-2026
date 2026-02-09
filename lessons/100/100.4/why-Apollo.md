@@ -2,7 +2,7 @@
 
 ## Apollo – Background and Purpose
 
-Apollo is a Go library for building Cardano transactions. It abstracts away the low-level transaction formats and protocol mechanics, giving developers a structured way to assemble, sign, and submit transactions without dealing directly with raw CBOR or ledger internals.
+[Apollo](https://github.com/Salvionied/apollo/tree/master) is a Go library for building Cardano transactions. It abstracts away the low-level transaction formats and protocol mechanics, giving developers a structured way to assemble, sign, and submit transactions without dealing directly with raw CBOR or ledger internals.
 
 For Go developers, Apollo plays a role similar to cardano-cli, Mesh, or PyCardano—but is designed specifically for programmatic use inside Go applications.
 
@@ -14,15 +14,37 @@ This lesson explains **why Apollo exists**, **what problems it solves**, and **h
 
 Before this lesson, you should:
 
-- Understand the basic Cardano UTxO model (Where transactions are fundamental which consume inputs, have parameters, and produce outputs)
-- Be **comfortable reading** Go code (even if you cannot yet write it fluently)
-- Have a general sense of what a blockchain transaction is
+- Understand the basic Cardano UTxO model (Where transactions are fundamental which consume inputs, have parameters, and produce outputs)  --> UTxO crash course in Aiken-Lang 
+- Be **comfortable reading** Go code (even if you cannot yet write it fluently)  --> Any Go course on Youtube
+- Have a general sense of what a blockchain transaction is --> PPPBL.io or [Cardano Developer Portal](https://developers.cardano.org/)
 
-No coding is required in this lesson. You do not need to understand smart contracts, Plutus, or on-chain validation details yet—this lesson focuses only on a board understanding of Apollo.
+No coding is required in this lesson. You do not need to understand smart contracts, Plutus, or on-chain validation details yet — this lesson focuses only on a board understanding of Apollo.
 
 ---
 
 ## The Problem Apollo Solves
+
+Conceptually, Apollo fits here in the Cardano Stack:
+
+```mermaid
+flowchart TB
+Above("Wallet UIs, APIs, CLIs") --- Core(Apollo, Bursa, Adder)
+Core --- Below("Raw CBOR, protocol parameters, ledger rules")
+```
+
+- **Below**: Raw CBOR, protocol parameters, ledger rules
+- **Above**: Wallet UIs, APIs, CLIs
+- **Alongside**: Other Cardano development libraries (Bursa, Adder)
+
+You can think of Apollo as a **transaction construction engine**:
+
+- It does not manage wallets for you
+- It does not run a node
+- It does not store keys long-term
+- It focuses on *correct transaction assembly*
+
+---
+## First Look at Cardano Transactions
 
 At the ledger level, a Cardano transaction must:
 
@@ -34,6 +56,39 @@ At the ledger level, a Cardano transaction must:
 
 All of this is ultimately encoded as **CBOR**, a compact binary format.
 
+```mermaid
+flowchart LR
+    subgraph Inputs
+        U1[UTxO #1]
+        U2[UTxO #2]
+    end
+
+    subgraph Transaction
+        TX[Cardano Transaction
+        - inputs
+        - outputs
+        - fee
+        - signatures
+        - protocol rules]
+    end
+
+    subgraph Outputs
+        O1[Output to Recipient]
+        O2[Change Output]
+        F[Fee to Network]
+    end
+
+    U1 --> TX
+    U2 --> TX
+
+    TX --> O1
+    TX --> O2
+    TX --> F
+
+    TX --> CBOR[CBOR Encoding]
+
+```
+
 While the Cardano CLI can build transactions step by step, doing this programmatically—especially in Go—quickly becomes complex and error-prone.
 
 **Apollo exists to bridge this gap.**
@@ -42,73 +97,13 @@ It lets developers express *transaction intent* (who pays whom, how much, under 
 
 ---
 
-## Where Apollo Fits in the Cardano Stack
-
-To make this more concrete, the diagram below shows how Apollo fits into a typical Cardano Go developer stack:
-
-```mermaid
-graph TD
-    subgraph Developer Layer
-        CLI[Cobra CLI]
-        API[Fiber API]
-        App[Go Application]
-    end
-
-    subgraph Transaction Layer
-        Apollo[Apollo<br/>Transaction Builder]
-    end
-
-    subgraph Infrastructure Layer
-        Bursa[Bursa<br/>Wallet & Keys]
-        Adder[Adder<br/>Chain Events]
-    end
-
-    subgraph Network Layer
-        Node[Cardano Node]
-        Indexer[Blockfrost / Koios]
-    end
-
-    CLI --> Apollo
-    API --> Apollo
-    App --> Apollo
-
-    Apollo --> Bursa
-    Apollo --> Indexer
-
-    Adder --> Node
-    Indexer --> Node
-```
-
-This diagram highlights Apollo’s role as the **bridge between application logic and the Cardano ledger**: applications express intent, Apollo constructs valid transactions, and network services provide the data and submission path needed to interact with the blockchain.
-
-Conceptually, Apollo sits here:
-
-- **Below**: Raw CBOR, protocol parameters, ledger rules
-- **Above**: Wallet UIs, APIs, CLIs
-- **Alongside**: Other Cardano development libraries (Bursa, Adder)
-
-```mermaid
-flowchart TB
-Above("Wallet UIs, APIs, CLIs") --- Core(Apollo, Bursa, Adder)
-Core --- Below("Raw CBOR, protocol parameters, ledger rules")
-```
-
-You can think of Apollo as a **transaction construction engine**:
-
-- It does not manage wallets for you
-- It does not run a node
-- It does not store keys long-term
-- It focuses on *correct transaction assembly*
-
----
-
 ## A First Look at Code: CLI vs Apollo
 
-This lesson does not require you to *write* code, but it does expect you to begin **reading and understanding** it. To make Apollo’s value concrete, it helps to compare a traditional Cardano CLI workflow with the equivalent Apollo code.
+This lesson does not require you to *write* code, but it does expect you to begin **reading and understanding** it. To make Apollo's value concrete, it helps to compare a traditional Cardano CLI workflow with the equivalent Apollo code.
 
 The goal here is not to memorize commands or syntax, but to notice the *shape* of the logic and where complexity lives.
 
-### Building a Simple Transaction with the Cardano CLI (Conceptual)
+### Building a Simple Transaction with the Cardano CLI (Pseudo Code)
 
 A basic ADA transfer using the Cardano CLI typically involves multiple explicit steps:
 
@@ -156,31 +151,143 @@ This explicitness is powerful—but difficult to embed inside applications.
 With Apollo, the same intent can be expressed declaratively in Go:
 
 ```go
-// 1) Choose network + data source (node, Ogmios, Blockfrost, etc.)
-builder := apollo.NewTxBuilder().
-    WithNetwork(apollo.Preprod).
-    WithChainContext(chainContext) // used to fetch protocol params + UTxOs
+package main
 
-// 2) Load spendable UTxOs for the sender (like `cardano-cli query utxo`)
-utxos := chainContext.UTxOsAtAddress(senderAddr)
+import (
+    "encoding/hex"
+    "fmt"
 
-// 3) Build tx intent (outputs + change), then complete (fees, change, etc.)
-tx, err := builder.
-    FromAddress(senderAddr, utxos).
-    PayToAddress(recipientAddr, 2_000_000).
-    ChangeTo(senderAddr).
-    Complete()
+    // CBOR is the binary format Cardano uses on-chain
+    "github.com/fxamacker/cbor/v2"
 
-// 4) Sign + submit (or return signed tx)
-signed := tx.Sign(paymentSKey)
-txHash := chainContext.Submit(signed)
+    // Apollo is the transaction-building library
+    "github.com/Salvionied/apollo"
+
+    // BlockFrostChainContext is a ChainContext implementation
+    // that knows how to query the Cardano blockchain via Blockfrost
+    "github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
+
+    // Network / environment constants (PREVIEW, PREPROD, MAINNET, etc.)
+    "github.com/Salvionied/apollo/constants"
+)
+
+func main() {
+    // ---------------------------------------------------------------------
+    // 1) Create a ChainContext (how Apollo learns about the blockchain)
+    // ---------------------------------------------------------------------
+    // The ChainContext is responsible for:
+    // - fetching UTxOs
+    // - fetching protocol parameters (fees, limits, etc.)
+    // - submitting transactions
+    //
+    // Apollo itself does NOT talk to the blockchain directly.
+    // It relies on a ChainContext like this one.
+    bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
+        constants.BLOCKFROST_BASE_URL_PREVIEW, // Blockfrost API endpoint
+        int(constants.PREVIEW),                // Network (Preview testnet)
+        "blockfrost_api_key",                  // API key
+    )
+    if err != nil { //typical Go Error handling
+        panic(err)
+    }
+
+    // ---------------------------------------------------------------------
+    // 2) Create an Apollo transaction builder
+    // ---------------------------------------------------------------------
+    // Apollo separates:
+    // - the builder (constructs transactions)
+    // - the ChainContext (provides blockchain data)
+    //
+    // Here initalize a Tx builder (an empty backend) ready for tx data.
+    cc := apollo.NewEmptyBackend()
+    apollob := apollo.New(&cc)
+
+    // ---------------------------------------------------------------------
+    // 3) Load a wallet from a mnemonic
+    // ---------------------------------------------------------------------
+    // This derives a payment keypair and address from the mnemonic.
+    // The wallet provides:
+    // - the sender address
+    // - signing keys for the transaction
+    SEED := "your mnemonic here"
+    apollob, err = apollob.SetWalletFromMnemonic(SEED, constants.PREVIEW)
+    if err != nil {
+        panic(err)
+    }
+
+    // Set the wallet address as the change address.
+    // Any leftover ADA and / or Tokens after fees will be sent back here.
+    apollob, err = apollob.SetWalletAsChangeAddress()
+    if err != nil {
+        panic(err)
+    }
+
+    // ---------------------------------------------------------------------
+    // 4) Query UTxOs for the wallet address
+    // ---------------------------------------------------------------------
+    // This is equivalent to:
+    //   cardano-cli query utxo --address <addr> ...
+    //
+    // We explicitly fetch UTxOs here to show where they come from.
+    utxos, err := bfc.Utxos(*apollob.GetWallet().GetAddress())
+    if err != nil {
+        panic(err)
+    }
+
+    // ---------------------------------------------------------------------
+    // 5) Declare transaction intent and finalize
+    // ---------------------------------------------------------------------
+    // - Add the available UTxOs as possible inputs
+    // - Declare an output / PayToAddress (send ADA to another address)
+    // - Complete() selects inputs, calculates fees, and balances the tx
+    apollob, err = apollob.
+        AddLoadedUTxOs(utxos...).
+        PayToAddressBech32("your address here", 1_000_000).
+        Complete()
+    if err != nil {
+        panic(err)
+    }
+
+    // ---------------------------------------------------------------------
+    // 6) Sign the transaction
+    // ---------------------------------------------------------------------
+    // This attaches the required signatures using the wallet keys.
+    apollob = apollob.Sign()
+
+    // ---------------------------------------------------------------------
+    // 7) Inspect the raw transaction
+    // ---------------------------------------------------------------------
+    // At the ledger level, a Cardano transaction is CBOR-encoded.
+    // This step shows the exact bytes that will be submitted on-chain.
+    tx := apollob.GetTx()
+    cborred, err := cbor.Marshal(tx)
+    if err != nil {
+        panic(err)
+    }
+
+    // Prints the CBOR
+    fmt.Println("CBOR tx:", hex.EncodeToString(cborred))
+
+    // ---------------------------------------------------------------------
+    // 8) Submit the transaction
+    // ---------------------------------------------------------------------
+    // This sends the signed CBOR transaction to the network via Blockfrost.
+    tx_id, err := bfc.SubmitTx(*tx)
+    if err != nil {
+        panic(err)
+    }
+
+    // Print the transaction hash returned by the network
+    fmt.Println("Tx hash:", hex.EncodeToString(tx_id.Payload))
+}
+
 
 ```
 
 At this stage, you do **not** need to understand every function call. Instead, notice what is different:
 
-- There are no intermediate files
-- UTxO selection is implicit
+- There are no intermediate files (Remember the files from the CLI - utxos.json, tx.raw, tx.signed)
+- UTxO selection is implicit 
 - Fee calculation is automatic
 - The transaction is only finalized at `Complete()`
 
@@ -213,7 +320,6 @@ Apollo uses a fluent builder pattern:
 
 - Each method adds a constraint or requirement
 - The transaction is not finalized until the final step
-- Errors surface early if constraints cannot be satisfied
 
 This mirrors how Cardano transactions actually work: they are not 'sent' until all requirements are met.
 
@@ -235,7 +341,7 @@ Apollo supports multiple ChainContext implementations (Ogmios, Blockfrost, Maest
 
 ## What Apollo Does Not Do
 
-It’s important to understand Apollo’s boundaries.
+It's important to understand Apollo's boundaries.
 
 Apollo does **not**:
 
@@ -251,30 +357,6 @@ Apollo is a **developer library**, not a wallet.
 ---
 
 ## Key Concepts You Will Use Later
-
-Here is the code again for referenece:
-
-```go
-// 1) Choose network + data source (node, Ogmios, Blockfrost, etc.)
-builder := apollo.NewTxBuilder().
-    WithNetwork(apollo.Preprod).
-    WithChainContext(chainContext) // used to fetch protocol params + UTxOs
-
-// 2) Load spendable UTxOs for the sender (like `cardano-cli query utxo`)
-utxos := chainContext.UTxOsAtAddress(senderAddr)
-
-// 3) Build tx intent (outputs + change), then complete (fees, change, etc.)
-tx, err := builder.
-    FromAddress(senderAddr, utxos).
-    PayToAddress(recipientAddr, 2_000_000).
-    ChangeTo(senderAddr).
-    Complete()
-
-// 4) Sign + submit (or return signed tx)
-signed := tx.Sign(paymentSKey)
-txHash := chainContext.Submit(signed)
-
-```
 
 You will encounter these ideas repeatedly in later lessons:
 
@@ -296,7 +378,7 @@ You do not need to master these yet—only recognize them.
 
 ## Why This Matters for Go Developers
 
-Cardano’s tooling ecosystem has historically been CLI-first and Haskell-centric.
+Cardano's tooling ecosystem has historically been CLI-first and Haskell-centric.
 
 Apollo makes it possible to:
 
@@ -304,11 +386,9 @@ Apollo makes it possible to:
 - Integrate Cardano logic into Go services and CLIs
 - Learn Cardano concepts without first learning Haskell or ledger internals
 
-This course uses Apollo as a foundation because it allows you to focus on **learning Cardano**, not wrestling with encoding formats.
-
 ---
 
-## What’s Next
+## What's Next
 
 In the next lessons, you will:
 
