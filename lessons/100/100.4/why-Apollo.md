@@ -16,7 +16,7 @@ Before this lesson, you should:
 
 - Understand the basic Cardano UTxO model (Where transactions are fundamental which consume inputs, have parameters, and produce outputs)  --> UTxO crash course in Aiken-Lang 
 - Be **comfortable reading** Go code (even if you cannot yet write it fluently)  --> Any Go course on Youtube
-- Have a general sense of what a blockchain transaction is --> PPPBL.io or [Cardano Developer Portal](https://developers.cardano.org/)
+- Have a general sense of what a blockchain transaction is --> [Cardano Developer Portal](https://developers.cardano.org/)
 
 No coding is required in this lesson. You do not need to understand smart contracts, Plutus, or on-chain validation details yet — this lesson focuses only on a board understanding of Apollo.
 
