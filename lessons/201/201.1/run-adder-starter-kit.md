@@ -35,45 +35,88 @@ Here's what you'll do to run the adder starter kit:
 
 ## Step-by-Step Instructions
 
-### Step 1: Access the Demeter.run Workspace
+### Step 1: Set Up the Adder Starter Kit Workspace on Demeter.run
 
 **What to do:**
-Navigate to Demeter.run and create or access a workspace for the adder starter kit. The platform provides a cloud-based development environment with a preconfigured Cardano node already running and synced.
+
+1. **Log in to Demeter.run** - Navigate to https://demeter.run and either log in to your existing account or sign up for a new account if you don't have one yet.
+
+2. **Access the Starter Kits page** - Navigate to https://demeter.run/products/starter-kits
+
+   **-- INSERT SCREENSHOT 1 HERE --**
+
+3. **Select the Adder Library starter kit** - From the available starter kits, choose "Adder library" to begin setting up your workspace.
+
+4. **Create or select a project** - Either create a new project or choose an existing project to add the workspace to. The workspace will automatically begin provisioning.
+
+5. **Pause the provisioning** - As soon as the workspace starts to provision, you'll see an orange banner. Press the pause button in that banner to stop the provisioning process temporarily.
+
+6. **Add a Cardano Node** - Before continuing, you need to configure the Cardano node that your indexer will connect to:
+   - Navigate to the "Ports" tab in the left sidebar
+   - Click "Add Product"
+   - Under "Select port", choose **Cardano Node**
+   - Under "Select type", choose **cardano-preprod - stable (10.5.3)**
+
+   **-- INSERT SCREENSHOT 2 HERE --**
+
+   **Important:** Gimbalabs has a best practice of running all courses and examples on the Cardano preprod testnet. However, the Adder library starter kit automatically defaults to Cardano Preview. You need to change this configuration.
+
+7. **Change the network to preprod** - Return to the "Workspaces" tab in the left sidebar. In your paused workspace, locate the "NETWORK" field and change it from "preview" to "preprod".
+
+8. **Restart the workspace** - Press the play button to reboot the environment with the correct preprod network configuration.
+
+   **-- INSERT SCREENSHOT 3 HERE --**
+
+9. Once the environment has loaded, the banner will turn green and you can press start to load the container in your web browser 
+
+ **-- INSERT SCREENSHOT 4 HERE --**
 
 **Why it matters:**
-Running a local Cardano node requires significant disk space and sync time. Demeter.run eliminates this barrier, letting you focus on building indexer capabilities rather than infrastructure setup. This mirrors how many production projects use managed infrastructure to accelerate development.
+Running a local Cardano node requires significant disk space (100+ GB) and sync time (hours to days). Demeter.run eliminates this barrier by providing a cloud-based development environment with preconfigured, fully-synced Cardano nodes. This lets you focus on building indexer capabilities rather than infrastructure setup.
+
+Using the preprod testnet is crucial because it closely mirrors mainnet behavior while providing free test ADA and a safe environment for experimentation. Gimbalabs standardizes on preprod across all courses to ensure consistency and to align with Cardano ecosystem testing practices.
 
 **Expected result:**
-You should see a workspace interface with access to a terminal and file system. The workspace automatically provides two critical environment variables:
-* `CARDANO_NODE_SOCKET_PATH` - Location of the node's Unix socket
-* `CARDANO_NODE_MAGIC` - Network identifier for the connected node
+After completing these steps, you should see your workspace in "RUNNING" state with:
+* Network field showing "preprod"
+* A fully provisioned development environment with VS Code interface
+* Access to a terminal and file system
+* Two critical environment variables automatically configured:
+  - `CARDANO_NODE_SOCKET_PATH` - Location of the node's Unix socket
+  - `CARDANO_NODE_MAGIC` - Network identifier for the preprod testnet
 
 ---
 
-### Step 2: Clone the Starter Kit Repository
+### Step 2: Verify the Repository is Loaded
 
 **What to do:**
-In your Demeter.run terminal, clone the adder library starter kit:
-```bash
-git clone https://github.com/blinklabs-io/adder-library-starter-kit.git
-cd adder-library-starter-kit
-```
+Once your workspace opens in the browser, you should see a VS Code interface with the adder library starter kit repository already loaded. Take a moment to familiarize yourself with the file structure in the left sidebar.
+
+**-- INSERT SCREENSHOT 5 HERE --**
 
 **Why it matters:**
-The starter kit contains a working example (`./cmd/adder-publisher/main.go`) that demonstrates the core pattern for building indexers. Understanding this example gives you a template you can adapt for project-specific indexing needs.
+The Demeter starter kit automatically provisions your workspace with the repository pre-loaded, eliminating the need to manually clone it. This is part of Demeter's streamlined development experience. The starter kit contains a working example (`./cmd/adder-publisher/main.go`) that demonstrates the core pattern for building indexers. Understanding this example gives you a template you can adapt for project-specific indexing needs.
 
 **Expected result:**
-You should have the repository cloned with the following key files visible:
+You should see the following key files in the VS Code file explorer:
 * `./cmd/adder-publisher/main.go` - The main example code
 * `go.mod` - Go module dependencies
 * `README.md` - Documentation
+
+The repository is ready to run without any additional setup.
 
 ---
 
 ### Step 3: Run the Adder Publisher Example
 
 **What to do:**
-Execute the example indexer:
+1. **Open a terminal** - In the VS Code interface, open a new terminal by clicking on the menu or using the keyboard shortcut (usually Ctrl+` or Cmd+`). The terminal will open at the bottom of your workspace.
+
+2. **Navigate to the repository** - The terminal should open in the correct directory, but if needed, ensure you're in the adder-library-starter-kit folder.
+
+**-- INSERT SCREENSHOT 6 HERE --**
+
+3. **Execute the example indexer:**
 ```bash
 go run ./cmd/adder-publisher
 ```
@@ -88,22 +131,22 @@ You should see console output showing:
 * Transaction events being logged
 * Real-time blockchain activity streaming through your terminal
 
+**-- INSERT SCREENSHOT 7 HERE --**
+
 ---
 
-### Step 4: Observe Blockchain Events
+### Step 4: Confirm the Indexer is Running
 
 **What to do:**
-Watch the terminal output as the indexer processes blockchain events. Pay attention to:
-* Block numbers incrementing
-* Transaction data being displayed
-* Event types being logged
-* Connection status messages
+Watch the terminal output briefly to confirm the indexer is successfully connected and processing blockchain events. You should see block numbers incrementing and transaction data streaming in real-time.
 
 **Why it matters:**
-Understanding what data flows through an indexer is crucial for contributing to projects that need to react to on-chain events—whether it's tracking NFT mints, monitoring treasury movements, or indexing smart contract interactions.
+Confirming the connection works verifies that your environment is correctly configured with the Cardano node. You're now observing the Cardano blockchain through the ChainSync protocol.
 
 **Expected result:**
-Continuous stream of blockchain data in your terminal showing real-time chain activity. You're now observing the Cardano blockchain through the ChainSync protocol.
+Continuous stream of blockchain data in your terminal showing real-time chain activity from the preprod testnet.
+
+**Note:** Understanding the structure and details of this blockchain data will be explored in depth in further lessons. For now, the goal is simply to confirm you can successfully run the adder starter kit.
 
 ---
 

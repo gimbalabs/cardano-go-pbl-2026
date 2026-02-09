@@ -99,11 +99,11 @@ It lets developers express *transaction intent* (who pays whom, how much, under 
 
 ## A First Look at Code: CLI vs Apollo
 
-This lesson does not require you to *write* code, but it does expect you to begin **reading and understanding** it. To make Apollo's value concrete, it helps to compare a traditional Cardano CLI workflow with the equivalent Apollo code.
+This lesson does not require you to *write* code, but it does expect you to begin **reading and understanding** it. To make Apollo’s value concrete, it helps to compare a traditional Cardano CLI workflow with the equivalent Apollo code.
 
 The goal here is not to memorize commands or syntax, but to notice the *shape* of the logic and where complexity lives.
 
-### Building a Simple Transaction with the Cardano CLI (Pseudo Code)
+### Building a Simple Transaction with the Cardano CLI (Conceptual)
 
 A basic ADA transfer using the Cardano CLI typically involves multiple explicit steps:
 
