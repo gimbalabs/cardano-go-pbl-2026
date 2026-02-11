@@ -26,11 +26,12 @@ Before you begin, ensure you have:
 
 You will build a program that:
 
-- Connects to the Cardano preprod network
-- Queries UTxOs at a wallet address
-- Constructs a transaction that sends ADA to a recipient
-- Automatically balances inputs, outputs, fees, and change
-- Signs the transaction
+- Connects to the Cardano Preview network  
+- Loads a wallet from a mnemonic  
+- Queries UTxOs for that wallet  
+- Constructs a transaction that sends ADA  
+- Automatically balances inputs and change  
+- Signs the transaction  
 - Submits it to the network
 
 This lesson focuses on **single-signer, ADA-only transactions**.
@@ -174,27 +175,27 @@ func main() {
 
 ---
 
-## Reading the Code Top to Bottom
+## Transaction Lifecycle
 
-This program follows the same lifecycle as every Cardano transaction:
+Every Cardano transaction follows this pattern:
 
-1. Connect to the network
-2. Load keys
-3. Declare transaction intent
-4. Finalize and balance
-5. Sign
-6. Submit
+1. Connect (ChainContext)  
+2. Load wallet  
+3. Fetch UTxOs  
+4. Declare intent  
+5. Complete (balance)  
+6. Sign  
+7. Submit  
 
-Here is a table that shows it:
-
-| Lifecycle step         | Where it happens in Apollo                |
-| ---------------------- | ----------------------------------------- |
-| Connect                | `NewBlockfrostChainContext(...)`          |
-| Load wallet              | `SetWalletFromMnemonic(...)`             |
-| Declare intent         | `AddLoadedUTxOs()`, `PayToAddressBech32()` |
-| Finalize & balance     | `Complete()`                         |
-| Sign                   | `apollob.Sign()`                           |
-| Submit                 | `bfc.SubmitTx()`                        |
+| Lifecycle Step | Where It Happens |
+|----------------|-----------------|
+| Connect | `NewBlockfrostChainContext(...)` |
+| Load wallet | `SetWalletFromMnemonic(...)` |
+| Fetch UTxOs | `bfc.Utxos(...)` |
+| Declare intent | `AddLoadedUTxOs()`, `PayToAddressBech32()` |
+| Finalize | `Complete()` |
+| Sign | `apollob.Sign()` |
+| Submit | `bfc.SubmitTx()` |
 
 ---
 
@@ -318,117 +319,125 @@ Step 1 OK: Go program runs
 
 This confirms your Go environment is working and gives you visible feedback.
 
-
 ### Step 2: Add imports and the chain context
 
 Add these imports:
 
 ```go
 import (
-    "log"
+    "encoding/hex"
+    "fmt"
 
-    BlockFrostChainContext "github.com/Salvionied/apollo/chaincontext/blockfrost"
+    "github.com/fxamacker/cbor/v2"
+    "github.com/Salvionied/apollo"
+    "github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
+    "github.com/Salvionied/apollo/constants"
 )
 ```
 
 Then create the chain context:
 
 ```go
-cc := BlockFrostChainContext.NewBlockfrostChainContext(
-    "preprod",
-    "preprodYOUR_BLOCKFROST_KEY",
-    false,
-)
+  bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
+        constants.BLOCKFROST_BASE_URL_PREVIEW, // Blockfrost API endpoint
+        int(constants.PREVIEW),                // Network (Preview testnet)
+        "blockfrost_api_key",                  // API key
+    )
+    if err != nil { //typical Go Error handling
+        panic(err)
+    }
 ```
 
 **What you just did:** created the object Apollo uses to query the chain and submit transactions.
 
-### Step 3: Load your signing key and derive your sender address
+### Step 3: Load your wallet from a mnemonic
 
 Add the Apollo import:
 
 ```go
-apollo "github.com/Salvionied/apollo"
-````
-
-Then load the signing key:
-
-```go
-skey, err := apollo.LoadSigningKeyFromFile("payment.skey")
-if err != nil {
-    log.Fatal(err)
-}
-
-fmt.Println("Step 3 OK: Signing key loaded")
+    SEED := "your mnemonic here"
+    apollob, err = apollob.SetWalletFromMnemonic(SEED, constants.PREVIEW)
+    if err != nil {
+        panic(err)
+    }
 ```
-
-Derive the sender address:
-
-```go
-senderAddr := skey.PubKey().Address("preprod")
-fmt.Println("Sender address:", senderAddr.String())
-```
-
-**Where does **``** come from?**
-
-It is created in **SLT 102.1 – I Can Create a Wallet with Bursa**. Copy it into this folder for the purpose of this lesson, and make sure it is ignored by git.
 
 ---
-### Step 4: Create the transaction builder
+
+### Step 4: Query UTxOs for the wallet address
 
 ```go
-builder := apollo.NewTransactionBuilder(cc)
+    utxos, err := bfc.Utxos(*apollob.GetWallet().GetAddress())
+    if err != nil {
+        panic(err)
+    }
 ```
-Think of `builder` as the place where you declare transaction intent.
+
+In this part, We explicitly fetch UTxOs here to show where they come from.
 
 ---
 
 ### Step 5: Declare intent and finalize with `Complete()`
 
 ```go
-tx, err := builder.
-    SetWalletFromBech32(senderAddr.String()).
-    PayToAddress("addr_test1...", 2_000_000).
-    Complete()
-
-if err != nil {
-    log.Fatal(err)
-}
-
-fmt.Println("Step 5 OK: Transaction finalized and balanced")
+    apollob, err = apollob.
+        AddLoadedUTxOs(utxos...).
+        PayToAddressBech32("your address here", 1_000_000).
+        Complete()
+    if err != nil {
+        panic(err)
+    }
 ```
 
 **Read this as:**
 
-- Spend from `senderAddr`
-- Pay 2 ADA to `recipientAddr`
-- Let Apollo select UTxOs, calculate fees, and generate change
+    - Add the available UTxOs as possible inputs
+    - Declare an output / PayToAddress (send ADA to another address)
+    - Complete() selects inputs, calculates fees, and balances the tx
 
 ---
 
-### Step 6: Sign and submit
+### Step 6: Sign
 
 Sign:
 
 ```go
-signedTx, err := tx.Sign(skey)
-if err != nil {
-    log.Fatal(err)
-}
+apollob = apollob.Sign()
 
-fmt.Println("Step 6 OK: transaction signed and submitted")
 ```
+
 ---
 
-### Step 7: Print the transaction hash
+### Step 7: Inspect the raw transaction
 
-Print the tx hash:
+create and print the CBOR 
 
 ```go
-fmt.Printf("Transaction submitted! Hash: %s\n", txHash)
+    tx := apollob.GetTx()
+    cborred, err := cbor.Marshal(tx)
+    if err != nil {
+        panic(err)
+    }
+
+    // Prints the CBOR
+    fmt.Println("CBOR tx:", hex.EncodeToString(cborred))
+```
+This is not neseccary for every transaction but included here for your learning
+
+---
+
+### Step 8: Submit the transaction and print the transaction hash
+
+```go
+    tx_id, err := bfc.SubmitTx(*tx)
+    if err != nil {
+        panic(err)
+    }
+
+    fmt.Println("Tx hash:", hex.EncodeToString(tx_id.Payload))
 ```
 
-Now you can copy the hash into a block explorer to verify the transaction.
+This sends the signed transaction to the network via Blockfrost.
 
 ---
 
