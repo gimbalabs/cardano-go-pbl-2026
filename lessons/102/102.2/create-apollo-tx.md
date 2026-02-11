@@ -45,56 +45,131 @@ Below is a complete example. You do not need to understand every line yet—focu
 package main
 
 import (
+    "encoding/hex"
     "fmt"
-    "log"
 
-    apollo "github.com/Salvionied/apollo"
-    BlockFrostChainContext "github.com/Salvionied/apollo/chaincontext/blockfrost"
+    // CBOR is the binary format Cardano uses on-chain
+    "github.com/fxamacker/cbor/v2"
+
+    // Apollo is the transaction-building library
+    "github.com/Salvionied/apollo"
+
+    // BlockFrostChainContext is a ChainContext implementation
+    // that knows how to query the Cardano blockchain via Blockfrost
+    "github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
+
+    // Network / environment constants (PREVIEW, PREPROD, MAINNET, etc.)
+    "github.com/Salvionied/apollo/constants"
 )
 
 func main() {
-    // 1. Create a chain context (network connection)
-    cc := BlockFrostChainContext.NewBlockfrostChainContext(
-        "preprod",
-        "preprodYOUR_BLOCKFROST_KEY",
-        false,
+    // ---------------------------------------------------------------------
+    // 1) Create a ChainContext (how Apollo learns about the blockchain)
+    // ---------------------------------------------------------------------
+    // The ChainContext is responsible for:
+    // - fetching UTxOs
+    // - fetching protocol parameters (fees, limits, etc.)
+    // - submitting transactions
+    //
+    // Apollo itself does NOT talk to the blockchain directly.
+    // It relies on a ChainContext like this one.
+    bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
+        constants.BLOCKFROST_BASE_URL_PREVIEW, // Blockfrost endpoint
+        int(constants.PREVIEW),                // Network (Preview testnet)
+        "blockfrost_api_key",                  // API key
     )
-
-    // 2. Load signing key
-    skey, err := apollo.LoadSigningKeyFromFile("payment.skey")
     if err != nil {
-        log.Fatal(err)
+        panic(err)
     }
 
-    senderAddr := skey.PubKey().Address("preprod")
+    // ---------------------------------------------------------------------
+    // 2) Create an Apollo transaction builder
+    // ---------------------------------------------------------------------
+    // Apollo separates:
+    // - the builder (constructs transactions)
+    // - the ChainContext (provides blockchain data)
+    //
+    // Here we start with an empty backend and manually feed it data.
+    cc := apollo.NewEmptyBackend()
+    apollob := apollo.New(&cc)
 
-    // 3. Create a transaction builder
-    builder := apollo.NewTransactionBuilder(cc)
+    // ---------------------------------------------------------------------
+    // 3) Load a wallet from a mnemonic
+    // ---------------------------------------------------------------------
+    // This derives a payment keypair and address from the mnemonic.
+    // The wallet provides:
+    // - the sender address
+    // - signing keys for the transaction
+    SEED := "your mnemonic here"
+    apollob, err = apollob.SetWalletFromMnemonic(SEED, constants.PREVIEW)
+    if err != nil {
+        panic(err)
+    }
 
-    // 4. Build the transaction
-    tx, err := builder.
-        SetWalletFromBech32(senderAddr.String()).
-        PayToAddress("addr_test1...", 2_000_000).
+    // Set the wallet address as the change address.
+    // Any leftover ADA after fees will be sent back here.
+    apollob, err = apollob.SetWalletAsChangeAddress()
+    if err != nil {
+        panic(err)
+    }
+
+    // ---------------------------------------------------------------------
+    // 4) Query UTxOs for the wallet address
+    // ---------------------------------------------------------------------
+    // This is equivalent to:
+    //   cardano-cli query utxo --address <addr> ...
+    //
+    // We explicitly fetch UTxOs here to show where they come from.
+    utxos, err := bfc.Utxos(*apollob.GetWallet().GetAddress())
+    if err != nil {
+        panic(err)
+    }
+
+    // ---------------------------------------------------------------------
+    // 5) Declare transaction intent and finalize
+    // ---------------------------------------------------------------------
+    // - Add the available UTxOs as possible inputs
+    // - Declare an output (send ADA to another address)
+    // - Complete() selects inputs, calculates fees, and balances the tx
+    apollob, err = apollob.
+        AddLoadedUTxOs(utxos...).
+        PayToAddressBech32("your address here", 1_000_000).
         Complete()
-
     if err != nil {
-        log.Fatal(err)
+        panic(err)
     }
 
-    // 5. Sign the transaction
-    signedTx, err := tx.Sign(skey)
+    // ---------------------------------------------------------------------
+    // 6) Sign the transaction
+    // ---------------------------------------------------------------------
+    // This attaches the required signatures using the wallet keys.
+    apollob = apollob.Sign()
+
+    // ---------------------------------------------------------------------
+    // 7) Inspect the raw transaction
+    // ---------------------------------------------------------------------
+    // At the ledger level, a Cardano transaction is CBOR-encoded.
+    // This step shows the exact bytes that will be submitted on-chain.
+    tx := apollob.GetTx()
+    cborred, err := cbor.Marshal(tx)
     if err != nil {
-        log.Fatal(err)
+        panic(err)
+    }
+    fmt.Println("CBOR tx:", hex.EncodeToString(cborred))
+
+    // ---------------------------------------------------------------------
+    // 8) Submit the transaction
+    // ---------------------------------------------------------------------
+    // This sends the signed CBOR transaction to the network via Blockfrost.
+    tx_id, err := bfc.SubmitTx(*tx)
+    if err != nil {
+        panic(err)
     }
 
-    // 6. Submit to the network
-    txHash, err := cc.SubmitTx(*signedTx)
-    if err != nil {
-        log.Fatal(err)
-    }
-
-    fmt.Printf("Transaction submitted! Hash: %s\n", txHash)
+    // Print the transaction hash returned by the network
+    fmt.Println("Tx hash:", hex.EncodeToString(tx_id.Payload))
 }
+
 ```
 
 ---
@@ -115,11 +190,11 @@ Here is a table that shows it:
 | Lifecycle step         | Where it happens in Apollo                |
 | ---------------------- | ----------------------------------------- |
 | Connect                | `NewBlockfrostChainContext(...)`          |
-| Load keys              | `LoadSigningKeyFromFile(...)`             |
-| Declare intent         | `SetWalletFromBech32()`, `PayToAddress()` |
-| Finalize & balance    | `Complete()`                         |
-| Sign                   | `tx.Sign(skey)`                           |
-| Submit                 | `cc.SubmitTx(...)`                        |
+| Load wallet              | `SetWalletFromMnemonic(...)`             |
+| Declare intent         | `AddLoadedUTxOs()`, `PayToAddressBech32()` |
+| Finalize & balance     | `Complete()`                         |
+| Sign                   | `apollob.Sign()`                           |
+| Submit                 | `bfc.SubmitTx()`                        |
 
 ---
 
@@ -128,11 +203,14 @@ Here is a table that shows it:
 The chain context is how Apollo communicates with the Cardano network.
 
 ```go
-cc := BlockFrostChainContext.NewBlockfrostChainContext(
-    "preprod",
-    "preprodYOUR_BLOCKFROST_KEY",
-    false,
-)
+    bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
+        constants.BLOCKFROST_BASE_URL_PREVIEW, // Blockfrost endpoint
+        int(constants.PREVIEW),                // Network (Preview testnet)
+        "blockfrost_api_key",                  // API key
+    )
+    if err != nil {
+        panic(err)
+    }
 ```
 
 The chain context is responsible for:
