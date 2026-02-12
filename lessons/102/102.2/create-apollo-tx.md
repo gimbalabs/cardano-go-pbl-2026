@@ -14,7 +14,7 @@ Before you begin, ensure you have:
 
 - Go 1.21+ installed
 - A [Blockfrost](https://blockfrost.io/) API key (free tier works for this lesson)
-- A Cardano preprod testnet wallet funded with test ADA (created in previous lesson)
+- A Cardano preprod testnet wallet funded with test ADA - both mnemonics and address (created in previous lesson)
 - A basic understanding of the Cardano UTxO model
 - Completed **SLT 100.4 – Apollo: Background and Purpose**
 
