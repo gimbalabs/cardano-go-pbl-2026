@@ -26,7 +26,7 @@ Before you begin, ensure you have:
 
 You will build a program that:
 
-- Connects to the Cardano Preview network  
+- Connects to the Cardano Preprod network  
 - Loads a wallet from a mnemonic  
 - Queries UTxOs for that wallet  
 - Constructs a transaction that sends ADA  
@@ -75,8 +75,8 @@ func main() {
     // Apollo itself does NOT talk to the blockchain directly.
     // It relies on a ChainContext like this one.
     bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
-        constants.BLOCKFROST_BASE_URL_PREVIEW, // Blockfrost endpoint
-        int(constants.PREVIEW),                // Network (Preview testnet)
+        constants.BLOCKFROST_BASE_URL_PREPROD, // Blockfrost endpoint
+        int(constants.PREPROD),                // Network (PREPROD testnet)
         "blockfrost_api_key",                  // API key
     )
     if err != nil {
@@ -102,7 +102,7 @@ func main() {
     // - the sender address
     // - signing keys for the transaction
     SEED := "your mnemonic here"
-    apollob, err = apollob.SetWalletFromMnemonic(SEED, constants.PREVIEW)
+    apollob, err = apollob.SetWalletFromMnemonic(SEED, constants.PREPROD)
     if err != nil {
         panic(err)
     }
@@ -198,80 +198,6 @@ Cardano transactions follow typical patterns. This pattern is:
 | Submit | `bfc.SubmitTx()` |
 
 ---
-
-### Lifecycle 1: Connect to the network (Chain Context)
-
-The chain context is how Apollo communicates with the Cardano network.
-
-```go
-    bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
-        constants.BLOCKFROST_BASE_URL_PREVIEW, // Blockfrost endpoint
-        int(constants.PREVIEW),                // Network (Preview testnet)
-        "blockfrost_api_key",                  // API key
-    )
-    if err != nil {
-        panic(err)
-    }
-```
-
-The chain context is responsible for:
-
-- Querying UTxOs
-- Fetching protocol parameters
-- Submitting transactions
-
----
-
-### Lifecycle 2: Wallet Loading
-
-```go
-apollob, err = apollob.SetWalletFromMnemonic(SEED, constants.PREVIEW)
-```
-
-The mnemonic derives:
-
-- Payment keypair  
-- Sender address  
-
----
-
-### Lifecycle 3: Declaring Transaction Intent
-
-This is the most important part of the lesson.
-
-```go
-    apollob, err = apollob.
-        AddLoadedUTxOs(utxos...).
-        PayToAddressBech32("your address here", 1_000_000).
-        Complete()
-```
-
-Read this as:
-
-- Spend from the sender address
-- Pay 2 ADA to the recipient
-- Let Apollo figure out how to make it valid
-
----
-
-### Lifecycle 4: Finalize and Balance
-
-`Complete()` is where UTxO selection, fee calculation, and change output creation occur.
-
----
-
-### Lifecycle 5: Signing and Submission
-
-Once a transaction is complete, it can be signed and submitted.
-
-```go
-signedTx, err := tx.Sign(skey)
-txHash, err := cc.SubmitTx(*signedTx)
-```
-
-At this point, the transaction is broadcast to the network.
-
----
 Let's Write this transaction step by step:
 
 ## Step-by-Step Build (Read, Then Run)
@@ -284,6 +210,7 @@ Throughout the steps below, you will replace placeholders like `preprodYOUR_BLOC
 
 ```go
 mkdir 102_2-Apollo && cd 102_2-Apollo
+mkdir tmp
 go mod init 102_2-Apollo
 go get github.com/Salvionied/apollo
 ```
@@ -291,11 +218,12 @@ go get github.com/Salvionied/apollo
 Create a file named main.go.
 
 ```bash
-code go.main
+code main.go
 ```
 
 ### Step 1: Start with a minimal Go program
 
+paste this code into the `main.go` file:
 ```go
 package main
 
@@ -322,43 +250,40 @@ This confirms your Go environment is working and gives you visible feedback.
 
 ### Step 2: Add the code to go.main
 
-Copy everyting in...
+Copy everything in the sample code into in main.go
 
 ```go
-import (
-    "encoding/hex"
-    "fmt"
-
-    "github.com/fxamacker/cbor/v2"
-    "github.com/Salvionied/apollo"
-    "github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
-    "github.com/Salvionied/apollo/constants"
-)
+//everything from above
 ```
 
-Then create the chain context:
-
-```go
-  bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
-        constants.BLOCKFROST_BASE_URL_PREVIEW, // Blockfrost API endpoint
-        int(constants.PREVIEW),                // Network (Preview testnet)
-        "blockfrost_api_key",                  // API key
-    )
-    if err != nil { //typical Go Error handling
-        panic(err)
-    }
-```
-
-**What you just did:** created the object Apollo uses to query the chain and submit transactions.
+**What you just did:** created go program that uses Apollo to build and submit transactions.
 
 ### Step 3: Get a Blockfrost key
 
+Go to [blockfrost](https://blockfrost.io) and get your API key.  To test everything is working correctly, run the following in your terminal:
 
-### Step 4 : Get wallet nmonic and addresses
+```bash
+curl -H "project_id: <your-project-id>" https://cardano-preprod.blockfrost.io/api/v0/epochs/latest
+```
+You should see something on the terminal and not an error
 
+Paste that key into the main.go in the BlockFrostChainContext block.  
+
+### Step 4 : Get wallet mnemonic and addresses
+You should have the needed stuff from the previous lesson. 
+mnemonic:
+sender address (derived from the mnemonic):
+a reciever address:
+
+You will need a few ADA for the transaction to work.  So you can check your addresses at an explorer:
+[https://preprod.cardanoscan.io/](https://preprod.cardanoscan.io/)
 ### step 5 : Run the transaction, inspect and troubleshoot
+It's now time for the moment of truth.  run the 'main.go' program and inspect the tx hash on the explorer
 
-
+```bash
+go run .
+```
+You should see a CBOR tx: and Tx Hash in your terminal.
 ---
 
 ## Verifying Your Transaction
