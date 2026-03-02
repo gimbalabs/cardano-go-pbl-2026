@@ -20,10 +20,9 @@ The starter kit includes a dedicated example: `./cmd/event-address-filter/main.g
 Before you begin, make sure you have:
 
 * Completed Lesson 201.3 (filtering by event type)
-* A running Demeter.run workspace with the Adder starter kit configured for **preprod**
+* Your Dolos instance running on preprod
+* The Adder starter kit cloned and configured from Lesson 201.1
 * A Cardano wallet with at least 15 test ADA (use the [Cardano Testnet Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/) if needed)
-
-**Important:** If you're starting a new workspace, remember to configure it for the preprod testnet (not preview). See Lesson 201.1 for detailed setup instructions.
 
 ## Overview of the Process
 
@@ -41,7 +40,7 @@ Here's what you'll do to filter transactions by address:
 ### Step 1: Open the Event Address Filter Script
 
 **What to do:**
-In your Demeter workspace, navigate to `./cmd/event-address-filter/main.go`. This is a separate script from the `adder-publisher` you used in previous lessons.
+Open `./cmd/event-address-filter/main.go`. This is a separate script from the `adder-publisher` you used in previous lessons.
 
 **-- INSERT SCREENSHOT 1 HERE --**
 
@@ -52,6 +51,9 @@ This script demonstrates Adder's recommended approach for filtering—using pipe
 You should see a `main.go` file with additional imports including `filter_chainsync` and `filter_event`.
 
 ---
+
+**remember**
+Update the config variables to match the dolos instance that you have running (SocketPath and Magic)
 
 ### Step 2: Understand the Filter Imports
 
@@ -164,7 +166,7 @@ inputOpts := []input_chainsync.ChainSyncOptionFunc{
 **-- INSERT SCREENSHOT 4 HERE --**
 
 **Why it matters:**
-Using the local socket path connects to your Demeter preprod node. The environment variables `CARDANO_NODE_SOCKET_PATH` and `CARDANO_NODE_MAGIC` are automatically configured in your workspace.
+Using the local socket path connects to your Dolos instance. The socket path and network magic are the values you set in `main.go` in Lesson 201.1.
 
 ---
 

@@ -20,10 +20,9 @@ Adder's `WithPoolIds` filter accepts both formats—it automatically handles the
 Before you begin, make sure you have:
 
 * Completed Lesson 201.5 (filtering by policy ID)
-* A running Demeter.run workspace with the Adder starter kit configured for **preprod**
+* Your Dolos instance running on preprod
+* The Adder starter kit cloned and configured from Lesson 201.1
 * A pool ID to track (we'll help you find one)
-
-**Important:** If you're starting a new workspace, remember to configure it for the preprod testnet (not preview). See Lesson 201.1 for detailed setup instructions.
 
 ## Overview of the Process
 
@@ -40,7 +39,7 @@ Here's what you'll do to filter blocks by pool ID:
 ### Step 1: Open the Event Address Filter Script
 
 **What to do:**
-In your Demeter workspace, open `./cmd/event-address-filter/main.go`. You'll modify this script to filter by pool ID.
+Open `./cmd/event-address-filter/main.go`. You'll modify this script to filter by pool ID.
 
 **Why it matters:**
 The same `filter_chainsync` package provides pool ID filtering alongside address and policy filters. The pattern is consistent across all filter types.
@@ -106,7 +105,7 @@ By filtering for `chainsync.block` events and using `WithPoolIds`, you'll only s
 **Expected result:**
 Your code should compile without errors. The filter is configured for pool-based block filtering.
 
-**Check your understanding:** Before running, review the `inputOpts` configuration in the script. Is it set up to connect to your Demeter preprod node, or somewhere else? If you're unsure, revisit Lesson 201.4 Step 5.
+**Check your understanding:** Before running, review the `inputOpts` configuration in the script. Is it set up to connect to your Dolos instance? If you're unsure, revisit Lesson 201.1 Step 3.
 
 ---
 

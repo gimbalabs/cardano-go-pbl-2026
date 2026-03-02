@@ -17,10 +17,9 @@ Adder produces three primary event types from blockchain monitoring:
 Before you begin, make sure you have:
 
 * Completed Lesson 201.1 (running the Adder Starter Kit)
-* A running Demeter.run workspace with the Adder starter kit configured for **preprod**
+* Your Dolos instance running on preprod
+* The Adder starter kit cloned and working from Lesson 201.1
 * Basic understanding of Go syntax
-
-**Important:** If you're starting a new workspace, remember to configure it for the preprod testnet (not preview). See Lesson 201.1 for detailed setup instructions, including adding a Cardano Node port and changing the NETWORK field from "preview" to "preprod".
 
 ## Overview of the Process
 
@@ -37,7 +36,7 @@ Here's what you'll do to filter by event type:
 ### Step 1: Open the Main File
 
 **What to do:**
-In your Demeter workspace, open `./cmd/adder-publisher/main.go` in the VS Code editor. Locate the `handleEvent` function—this is where all blockchain events are processed.
+Open `./cmd/adder-publisher/main.go` in your editor. Locate the `handleEvent` function — this is where all blockchain events are processed.
 
 **-- INSERT SCREENSHOT 1 HERE --**
 

@@ -23,10 +23,9 @@ Filtering by policy ID catches all transactions involving any asset under that p
 Before you begin, make sure you have:
 
 * Completed Lesson 201.4 (filtering by address)
-* A running Demeter.run workspace with the Adder starter kit configured for **preprod**
+* Your Dolos instance running on preprod
+* The Adder starter kit cloned and configured from Lesson 201.1
 * A policy ID to track (we'll provide a sample, or use one from your own tokens)
-
-**Important:** If you're starting a new workspace, remember to configure it for the preprod testnet (not preview). See Lesson 201.1 for detailed setup instructions.
 
 ## Overview of the Process
 
@@ -43,7 +42,7 @@ Here's what you'll do to filter transactions by policy ID:
 ### Step 1: Open the Event Address Filter Script
 
 **What to do:**
-In your Demeter workspace, open `./cmd/event-address-filter/main.go`. You'll modify this script to filter by policy ID instead of address.
+Open `./cmd/event-address-filter/main.go`. You'll modify this script to filter by policy ID instead of address.
 
 
 **Why it matters:**
