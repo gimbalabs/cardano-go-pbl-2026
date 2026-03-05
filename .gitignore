@@ -1,0 +1,11 @@
+# Lesson Coach symlinks (machine-specific, recreated via setup script)
+knowledge
+research
+.claude/skills/
+
+# OS
+.DS_Store
+
+# Editor
+*.swp
+*~

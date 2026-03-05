@@ -20,10 +20,9 @@ The starter kit includes a dedicated example: `./cmd/event-address-filter/main.g
 Before you begin, make sure you have:
 
 * Completed Lesson 201.3 (filtering by event type)
-* A running Demeter.run workspace with the Adder starter kit configured for **preprod**
+* Your Dolos instance running on preprod
+* The Adder starter kit cloned and configured from Lesson 201.1
 * A Cardano wallet with at least 15 test ADA (use the [Cardano Testnet Faucet](https://docs.cardano.org/cardano-testnets/tools/faucet/) if needed)
-
-**Important:** If you're starting a new workspace, remember to configure it for the preprod testnet (not preview). See Lesson 201.1 for detailed setup instructions.
 
 ## Overview of the Process
 
@@ -41,7 +40,7 @@ Here's what you'll do to filter transactions by address:
 ### Step 1: Open the Event Address Filter Script
 
 **What to do:**
-In your Demeter workspace, navigate to `./cmd/event-address-filter/main.go`. This is a separate script from the `adder-publisher` you used in previous lessons.
+Open `./cmd/event-address-filter/main.go`. This is a separate script from the `adder-publisher` you used in previous lessons.
 
 **-- INSERT SCREENSHOT 1 HERE --**
 
@@ -52,6 +51,9 @@ This script demonstrates Adder's recommended approach for filtering—using pipe
 You should see a `main.go` file with additional imports including `filter_chainsync` and `filter_event`.
 
 ---
+
+**remember**
+Update the config variables to match the dolos instance that you have running (SocketPath and Magic)
 
 ### Step 2: Understand the Filter Imports
 
@@ -71,6 +73,8 @@ import (
 - `filter_chainsync` - Filters by Cardano-specific criteria (address, asset, pool ID)
 
 These packages provide pre-built filter components you can add to your pipeline.
+
+> **Note:** In a future version of the Adder library (v0.36.0+), the `filter/chainsync` package will be renamed to `filter/cardano`. The API remains the same—only the import path and type names change (e.g., `filter_chainsync` becomes `filter_cardano`, and `ChainSyncOptionFunc` becomes `CardanoOptionFunc`). Check the starter kit's `go.mod` file to see which Adder version you're using.
 
 ---
 
@@ -162,7 +166,7 @@ inputOpts := []input_chainsync.ChainSyncOptionFunc{
 **-- INSERT SCREENSHOT 4 HERE --**
 
 **Why it matters:**
-Using the local socket path connects to your Demeter preprod node. The environment variables `CARDANO_NODE_SOCKET_PATH` and `CARDANO_NODE_MAGIC` are automatically configured in your workspace.
+Using the local socket path connects to your Dolos instance. The socket path and network magic are the values you set in `main.go` in Lesson 201.1.
 
 ---
 
@@ -203,6 +207,19 @@ Within 20-40 seconds (once the transaction is included in a block), your indexer
 Check your terminal output. You should see your transaction logged by the `handleEvent` function.
 
 **-- INSERT SCREENSHOT 5 HERE --**
+
+**Understanding the output:**
+The filtered transaction event shows your specific transaction data:
+
+- **Type**: `chainsync.transaction` — confirms this passed through both filters (event type and address)
+- **Context**: The block slot and hash where your transaction was included
+- **Payload**: Your transaction details including:
+  - Transaction hash — you can verify this matches your wallet's transaction history
+  - Inputs — the UTxO(s) you spent from your address
+  - Outputs — where the ADA went (recipient address and change back to you)
+  - Fee — the transaction fee deducted
+
+Because you filtered by your address, this is the *only* transaction that appeared—all other network activity was silently filtered out by the pipeline. This is the power of address filtering: in a busy network with thousands of transactions per block, you see only what's relevant to your application.
 
 **Why it matters:**
 This confirms your address filter is working correctly. The indexer ignored all other transactions on the network and only logged the one involving your address.
