@@ -7,7 +7,7 @@ prerequisites: Go programming fundamentals, basic terminal familiarity
 status: readiness-assessed
 created: 2024-12-12
 last_updated: 2026-03-05
-notes: 44 SLTs across 10 modules. Readiness: 6 Ready, 33 Needs Context, 5 Needs Human. Critical path is Apollo/gOuroboros/Adder documentation.
+notes: 45 SLTs across 10 modules (consolidated 201 from 6→3, expanded 099 from 3→4). Readiness assessment needs refresh after outline update.
 ---
 
 # Cardano Go PBL
@@ -44,22 +44,22 @@ Background knowledge for Cardano developers learning Go.
 
 Background knowledge about Cardano development for Go developers.
 
-- **100.1**: I know enough about Cardano to start this course.
-- **100.2**: I understand the essentials of how Ouroboros works.
-- **100.3**: I understand why Bursa was built and what problems it solves.
-- **100.4**: I understand why Apollo was built and what problems it solves.
-- **100.5**: I understand why Adder was built and what problems it solves.
-- **100.6**: I understand why Cardano Up was built and what problems it solves.
-- **100.7**: I know how this course works and I'm ready to get my hands dirty.
+- **100.1**: I can describe what Cardano is, how its blockchain differs from others, and what kinds of applications can be built on it.
+- **100.2**: I can explain how Ouroboros reaches consensus and why that matters for building on Cardano.
+- **100.3**: I can explain why Bursa was built and what problems it solves.
+- **100.4**: I can explain why Apollo was built and what problems it solves.
+- **100.5**: I can explain why Adder was built and what problems it solves.
+- **100.6**: I can explain why Cardano Up was built and what problems it solves.
+- **100.7**: I can navigate the course structure and set up my development environment for the modules ahead.
 
 ### Module 101: Interacting with the Cardano Node
 
 Options for accessing a Cardano Node and basic operations.
 
-- **101.1**: I can run the gOuroboros Starter Kit.
-- **101.2**: I can fetch specific blocks from a remote Cardano Node using Node-to-Node communication.
-- **101.3**: I can check sync state of the blockchain from a Cardano Node using either Node-to-Node or Node-to-Client communication.
-- **101.4**: I can fetch information about the Node's mempool contents.
+- **101.1**: I can set up and run the gOuroboros Starter Kit to connect to a Cardano Node.
+- **101.2**: I can fetch specific blocks from a remote Cardano Node.
+- **101.3**: I can check how far a Cardano Node has synced with the blockchain.
+- **101.4**: I can fetch information about pending transactions waiting in a Node's mempool.
 
 ### Module 102: Building Simple Transactions
 
@@ -69,59 +69,56 @@ Essentials of transaction building with Apollo.
 - **102.2**: I can build a simple transaction with Apollo.
 - **102.3**: I can sign a transaction manually and programmatically.
 - **102.4**: I can submit a transaction to a node with gOuroboros.
-- **102.5**: I can set a validity interval for a transaction.
+- **102.5**: I can set a time window that controls when a transaction is valid.
 - **102.6**: I can add simple metadata to a transaction.
 
 ### Module 201: Reacting to Chain Events
 
 Monitor blockchain activity by watching the chain and filtering events.
 
-- **201.1**: I can run the Adder Starter Kit.
+- **201.1**: I can set up and run the Adder Starter Kit to watch blockchain events.
 - **201.2**: I can configure Adder to connect to a Cardano Node.
-- **201.3**: I can filter by event type.
-- **201.4**: I can filter transactions by address.
-- **201.5**: I can filter transactions by policy id.
-- **201.6**: I can filter blocks by pool id.
+- **201.3**: I can use Adder to filter blockchain events by type, address, policy, or stake pool.
 
 ### Module 202: Querying the Blockchain
 
 View global or historical blockchain data beyond event handling.
 
-- **202.1**: I understand the role of an indexer and practical concerns for using one.
-- **202.2**: I understand the limits of an event handler and when I need a more general query.
+- **202.1**: I can explain what a blockchain indexer does and evaluate trade-offs for using one in my application.
+- **202.2**: I can identify when an event handler isn't enough and choose a query-based approach instead.
 - **202.3**: I can store and retrieve data using Adder.
 - **202.4**: I can select the right query provider for my application.
-- **202.5**: I can enrich event data with query data.
+- **202.5**: I can combine live event data with historical query data to build a more complete picture of blockchain activity.
 
 ### Module 203: Applications and Smart Contracts
 
 Build transactions that interact with smart contracts.
 
-- **203.1**: I can compare types written in Aiken, blueprint files, and Go code.
-- **203.2**: I can build a transaction that mints or burns tokens with a native script.
-- **203.3**: I can build a transaction that mints or burns tokens with a validator script.
-- **203.4**: I can build a transaction that unlocks tokens from a validator script.
-- **203.5**: I can build a transaction that writes datum to a new UTxO.
-- **203.6**: I can build a transaction that specifies a redeemer.
+- **203.1**: I can trace how a type defined in Aiken appears in a blueprint file and in Go code.
+- **203.2**: I can build a transaction that mints or burns tokens using a native script (no smart contract required).
+- **203.3**: I can build a transaction that mints or burns tokens using a validator script (smart contract).
+- **203.4**: I can build a transaction that unlocks tokens held by a smart contract.
+- **203.5**: I can build a transaction that attaches data to a new output on the blockchain.
+- **203.6**: I can build a transaction that passes input data to a smart contract using a redeemer.
 
 ### Module 204: Serializing Data
 
 Understand how data is stored on the blockchain.
 
-- **204.1**: I can read datums and redeemers from deserialized CBOR.
-- **204.2**: I can compile a parameterized validator script.
-- **204.3**: I can read a transaction event that includes a smart contract interaction.
-- **204.4**: I can manipulate and understand deserialized CBOR.
-- **204.5**: I can read a protobuf spec to understand standardized data.
-- **204.6**: I can reference the CDDL to understand what's in transaction CBOR.
+- **204.1**: I can extract smart contract data (datums and redeemers) from Cardano's binary format (CBOR).
+- **204.2**: I can compile a smart contract that accepts parameters at deployment time.
+- **204.3**: I can read a blockchain event and identify the smart contract interaction inside it.
+- **204.4**: I can modify decoded CBOR data structures in Go and re-encode them for use in transactions.
+- **204.5**: I can read a protobuf spec and use it to interpret how data is structured in a system.
+- **204.6**: I can use the CDDL specification as a reference to understand the structure of Cardano transaction data.
 
 ### Module 301: Debugging
 
 What to do when none of the above actually works.
 
-- **301.1**: I can find and fix bugs in my application.
-- **301.2**: I can use Go Profiler and the debug port to diagnose bugs.
-- **301.3**: I know where to go for help.
+- **301.1**: I can diagnose and fix bugs that span blockchain interactions, not just Go code.
+- **301.2**: I can use Go's profiling and debugging tools to diagnose performance and runtime issues.
+- **301.3**: I can identify the right community resources, documentation, and support channels for troubleshooting Cardano Go development.
 
 ### Module 302: Contributing
 

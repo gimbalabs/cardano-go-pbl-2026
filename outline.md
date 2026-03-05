@@ -1,23 +1,31 @@
 # Cardano Go PBL Outline
 
-## 100 - Prerequisites + Tools of Cardano Go Development
-Here's some background knowledge about Cardano development. If you're experienced with Go but new to Cardano, you're in the right place. Lessons 100.3 through 100.6 are organized around problem statements, introducing some of the libaries we'll use this course and why there were built.
+## 099 - Intro to Go
+Course modules for Cardano people who don't know Go yet. This will be a series of mini-projects that we build while updating Cardano Go PBL.
 
-1. I know enough about Cardano to start this course.
-2. I understand the essentials of how Ouroboros works.
-3. I understand why Bursa was built and what problems it solves.
-4. I understand why Apollo was built and what problems it solves.
-5. I understand why Adder was built and what problems it solves.
-6. I understand why Cardano Up was built and what problems it solves.
-7. I know how this course works and I'm ready to get my hands dirty.
+1. I can find and fix bugs in a Go program using debugging tools.
+2. I can work with Go's type system to make different parts of a program fit together.
+3. I can build a command-line tool with multiple commands using the Cobra library.
+4. I can create a web API that handles requests and sends responses using Fiber in Go.
+
+## 100 - Prerequisites + Tools of Cardano Go Development
+Here's some background knowledge about Cardano development. If you're experienced with Go but new to Cardano, you're in the right place. Lessons 100.3 through 100.6 are organized around problem statements, introducing some of the libraries we'll use in this course and why they were built.
+
+1. I can describe what Cardano is, how its blockchain differs from others, and what kinds of applications can be built on it.
+2. I can explain how Ouroboros reaches consensus and why that matters for building on Cardano.
+3. I can explain why Bursa was built and what problems it solves.
+4. I can explain why Apollo was built and what problems it solves.
+5. I can explain why Adder was built and what problems it solves.
+6. I can explain why Cardano Up was built and what problems it solves.
+7. I can navigate the course structure and set up my development environment for the modules ahead.
 
 ## 101 - Interacting with the Cardano Node
 Show devs their options for accessing a Cardano Node, and support them to get at least one option working. Then, complete some basic operations.
 
-1. I can run the gOuroboros Starter Kit. (use demeter.run CLI)
-2. I can fetch specific blocks from a remote Cardano Node using Node-to-Node communication.
-3. I can check sync state of the blockchain from a Cardano Node using either Node-to-Node or Node-to-Client communication.
-4. I can fetch information about the Node's mempool contents.
+1. I can set up and run the gOuroboros Starter Kit to connect to a Cardano Node.
+2. I can fetch specific blocks from a remote Cardano Node.
+3. I can check how far a Cardano Node has synced with the blockchain.
+4. I can fetch information about pending transactions waiting in a Node's mempool.
 
 ## 102 - Building Simple Transactions
 Learn the essentials of transaction building. When we're building transactions, we'll have to query the blockchain for some basic information; this will be covered in lesson 102.2 and reviewed each time we build a new transaction.
@@ -26,65 +34,51 @@ Learn the essentials of transaction building. When we're building transactions, 
 2. I can build a simple transaction with Apollo.
 3. I can sign a transaction manually and programmatically.
 4. I can submit a transaction to a node with gOuroboros.
-5. I can set a validity interval for a transaction.
+5. I can set a time window that controls when a transaction is valid.
 6. I can add simple metadata to a transaction.
 
 ## 201 - Reacting to Chain Events
 To build a dapp, you'll need to do more than just build transactions. In Modules 201, 202 and 203, we investigate the rest of the Cardano application stack. In this module, you will learn how to monitor what's happening on the blockchain by watching the chain and filtering events.
 
-1. I can run the Adder Starter Kit.
+1. I can set up and run the Adder Starter Kit to watch blockchain events.
 2. I can configure Adder to connect to a Cardano Node.
-3. I can filter by event type.
-4. I can filter transactions by address.
-5. I can filter transactions by policy id.
-6. I can filter blocks by pool id.
+3. I can use Adder to filter blockchain events by type, address, policy, or stake pool.
 
 ## 202 - Querying the Blockchain
 In Module 201, we learned about how to index the blockchain as transactions happen. Sometimes you need to view global or historical blockchain data that is not indexed by your app.
 
-1. I understand the role of an indexer and practical concerns for using one.
-2. I understand the limits of an event handler and when I need a more general query.
+1. I can explain what a blockchain indexer does and evaluate trade-offs for using one in my application.
+2. I can identify when an event handler isn't enough and choose a query-based approach instead.
 3. I can store and retrieve data using Adder.
 4. I can select the right query provider for my application.
-5. I can enrich event data with query data.
+5. I can combine live event data with historical query data to build a more complete picture of blockchain activity.
 
 ## 203 - Applications and Smart Contracts
 Now that you know how to read blockchain data and build basic transactions, you're ready to build some interesting applications! Let's investigate a variety of transactions that allow us to interact with smart contracts. When we do, we'll use Adder to watch the results of these transactions.
 
-1. I can compare types written in Aiken, blueprint files, and Go code.
-2. I can build a transaction that mints or burns tokens with a native script.
-3. I can build a transaction that mints or burns tokens with a validator script.
-4. I can build a transaction that unlocks tokens from a validator script.
-5. I can build a transaction that writes datum to a new UTxO.
-6. I can build a transaction that specifies a redeemer.
+1. I can trace how a type defined in Aiken appears in a blueprint file and in Go code.
+2. I can build a transaction that mints or burns tokens using a native script (no smart contract required).
+3. I can build a transaction that mints or burns tokens using a validator script (smart contract).
+4. I can build a transaction that unlocks tokens held by a smart contract.
+5. I can build a transaction that attaches data to a new output on the blockchain.
+6. I can build a transaction that passes input data to a smart contract using a redeemer.
 
 ## 204 - Serializing Data
 If you made it this far, we love you. And we'd like you to understand some details about how data is stored on the blockchain.
 
-1. I can read datums and redeemers from deserialized CBOR.
-2. I can compile a parameterized validator script.
-3. I can read a transaction event that includes a smart contract interaction.
-4. I can manipulate and understand deserialized CBOR.
-5. I can read a protobuf spec to understand standardized data.
-6. I can reference the CDDL to understand what's in transaction CBOR.
+1. I can extract smart contract data (datums and redeemers) from Cardano's binary format (CBOR).
+2. I can compile a smart contract that accepts parameters at deployment time.
+3. I can read a blockchain event and identify the smart contract interaction inside it.
+4. I can modify decoded CBOR data structures in Go and re-encode them for use in transactions.
+5. I can read a protobuf spec and use it to interpret how data is structured in a system.
+6. I can use the CDDL specification as a reference to understand the structure of Cardano transaction data.
 
 ## 301 - What to do when none of the above actually works
 
-1. I can find and fix bugs in my application.
-2. I can use use Go Profiler and the debug port to diagnose bugs.
-3. I know where to go for help.
+1. I can diagnose and fix bugs that span blockchain interactions, not just Go code.
+2. I can use Go's profiling and debugging tools to diagnose performance and runtime issues.
+3. I can identify the right community resources, documentation, and support channels for troubleshooting Cardano Go development.
 
 ## 302 - Contributing
 
 1. I can make a PR to Blink Labs repository.
-
-## 099 - Golang BBK
-Course modules for Cardano people who don't know Go yet. This will be a series of mini-projects that we build while updating Cardano Go PBL.
-
-1. I can write a command-line interface using the Cobra Go library.
-2. I can use Fiber to build an API.
-3. Debugging and type compatibility in Go
-
-
-## Course Glossary
-
