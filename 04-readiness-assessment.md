@@ -3,14 +3,14 @@
 ## Summary
 
 - **Total SLTs assessed**: 44
-- **Distribution**: 6 Ready / 33 Needs Context / 5 Needs Human
+- **Distribution**: 7 Ready / 32 Needs Context / 5 Needs Human
 - **Overview**: Claude is strong on pure Go fundamentals (debugging, type system, Cobra, profiling) and general Cardano conceptual knowledge. It is consistently weak on the niche Cardano Go libraries (gOuroboros, Bursa, Apollo, Adder) — it knows roughly what each does but cannot write or reliably evaluate code that uses their APIs. This is the dominant gap across the entire SLT set.
 
 ## Readiness by Module
 
 | Module                                  | Ready | Needs Context | Needs Human | Notes                                                                 |
 | --------------------------------------- | ----- | ------------- | ----------- | --------------------------------------------------------------------- |
-| 099 - Intro to Go                       | 3     | 1             | 0           | Strong on Go fundamentals; Fiber currency uncertain                   |
+| 099 - Intro to Go                       | 4     | 0             | 0           | Strong on Go fundamentals and basic Fiber API implementation          |
 | 100 - Prerequisites + Tools             | 1     | 6             | 0           | Can explain Cardano well; niche library explanations are partial      |
 | 101 - Interacting with the Cardano Node | 0     | 4             | 0           | gOuroboros API knowledge is uniformly partial                         |
 | 102 - Building Simple Transactions      | 0     | 4             | 2           | Bursa and Apollo APIs are weak; conceptual Cardano knowledge is solid |
@@ -29,14 +29,11 @@
 | 099.1 | Find and fix bugs using debugging tools | Strong     | Strong    | Strong     | Current   | Ready         |
 | 099.2 | Work with Go's type system              | Strong     | Strong    | Strong     | Current   | Ready         |
 | 099.3 | Build CLI tool with Cobra               | Strong     | Strong    | Strong     | Current   | Ready         |
-| 099.4 | Create web API with Fiber               | Strong     | Strong    | Strong     | Uncertain | Needs Context |
+| 099.4 | Create web API with Fiber               | Strong     | Strong    | Strong     | Current   | Ready         |
 
 #### Gap Analysis
 
-**SLT 099.4: "I can create a web API that handles requests and sends responses using Fiber in Go."**
-- **Partial dimension**: Knowledge Currency — Fiber v2 is well-established and known well, but Fiber v3 may now be the current version. Cannot confirm which version is current or whether breaking API changes were introduced.
-- **What Claude would need**: Confirmation of which Fiber version the course targets (v2 or v3); if v3, the migration guide and updated API reference.
-- **Risk if coached without context**: Could teach Fiber v2 patterns when v3 is expected, or vice versa. Route handler signatures and middleware patterns may differ between versions.
+No blocking gaps for module 099 at this time.
 
 ---
 
@@ -348,6 +345,7 @@ SLTs rated Ready. These can be turned into lessons immediately.
 | 099.1 | Find and fix bugs using debugging tools | 099 | Go debugging (delve, go vet, race detector) is core knowledge, stable, well-documented |
 | 099.2 | Work with Go's type system | 099 | Go type system (interfaces, structs, generics) is core knowledge, stable |
 | 099.3 | Build CLI tool with Cobra | 099 | Cobra is mature, stable, widely used — correct code and evaluation are reliable |
+| 099.4 | Create web API with Fiber | 099 | Basic Fiber routing and server scaffolding are stable and covered by current lesson context |
 | 100.1 | Describe Cardano and how it differs | 100 | Cardano fundamentals (eUTxO, native tokens, PoS) are well-established and stable |
 | 204.5 | Read protobuf spec and interpret data | 204 | Protocol Buffers is a mature, stable standard with excellent Go support |
 | 301.2 | Use Go profiling and debugging tools | 301 | Go pprof, trace, benchmarks are core knowledge, stable |
@@ -358,7 +356,6 @@ SLTs rated Needs Context. These can be built once supplementary materials are ga
 
 | # | SLT | Module | Context Needed |
 |---|-----|--------|---------------|
-| 099.4 | Create web API with Fiber | 099 | Fiber version confirmation (v2 vs v3) |
 | 100.2 | Explain Ouroboros consensus | 100 | Current Ouroboros variant explainer |
 | 100.3 | Explain why Bursa was built | 100 | Bursa README/docs |
 | 100.4 | Explain why Apollo was built | 100 | Apollo README/docs |
@@ -420,7 +417,6 @@ Consolidated, deduplicated list of resources needed to move SLTs from Needs Cont
 | Cardano ledger CDDL specification + guided walkthrough          | Docs                        | 204.6                                                                       | **Medium** |
 | Current Ouroboros consensus explainer                           | Docs                        | 100.2                                                                       | **Low**    |
 | Course setup guide and repo structure                           | Docs                        | 100.7                                                                       | **Low**    |
-| Fiber version confirmation (v2 vs v3)                           | Version Confirmation        | 099.4                                                                       | **Low**    |
 | Common Cardano Go cross-stack error patterns                    | Example Code + Human Review | 301.1                                                                       | **Low**    |
 | Current Cardano Go community resource list                      | Human Review                | 301.3                                                                       | **Low**    |
 
@@ -432,7 +428,7 @@ Priority is determined by leverage — resources that unlock the most SLTs rank 
 
 - **Weakness clusters**: The Blink Labs library ecosystem (gOuroboros, Bursa, Apollo, Adder) is the single dominant weakness. Every SLT that involves writing or evaluating code using these libraries falls to Needs Context or Needs Human. This is not surprising — these are niche libraries with limited public documentation and small training data footprints.
 
-- **Critical path**: The Apollo API reference is the highest-leverage item on the Context Shopping List. It unlocks or contributes to 11 SLTs spanning three modules (102, 203, 204). The gOuroboros and Adder documentation are tied for second, each unlocking 5–7 SLTs. Obtaining these three library references would move the assessment from 6 Ready to potentially 30+ Ready.
+- **Critical path**: The Apollo API reference is the highest-leverage item on the Context Shopping List. It unlocks or contributes to 11 SLTs spanning three modules (102, 203, 204). The gOuroboros and Adder documentation are tied for second, each unlocking 5–7 SLTs. Obtaining these three library references would move the assessment from 7 Ready to potentially 30+ Ready.
 
 - **Sequencing implications**: The readiness pattern closely mirrors the course sequence — earlier modules (099, 100) are more Ready, and readiness degrades as the course deepens into library-specific work. This suggests the natural module order is already well-aligned with a "build what you can, gather context as you go" strategy. However, Module 204 (Serializing Data) has more partial-but-close SLTs than Module 203, suggesting 204 might be easier to unlock than 203 despite coming later in the sequence.
 
