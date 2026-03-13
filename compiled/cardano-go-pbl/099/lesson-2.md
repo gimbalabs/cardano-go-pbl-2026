@@ -181,7 +181,7 @@ type AmountLike interface {
     AmountValue() int64
 }
 
-func SumAmounts[T AmountLike](items []T) int64 {
+func SumAmounts[T AmountLike] (items []T) int64 {
     var total int64
     for _, item := range items {
         total += item.AmountValue()
