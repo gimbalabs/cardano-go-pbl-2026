@@ -40,7 +40,7 @@ Learn the essentials of transaction building. When we're building transactions, 
 ## 201 - Reacting to Chain Events
 To build a dapp, you'll need to do more than just build transactions. In Modules 201, 202 and 203, we investigate the rest of the Cardano application stack. In this module, you will learn how to monitor what's happening on the blockchain by watching the chain and filtering events.
 
-1. I can set up and run the Adder Starter Kit to watch blockchain events.
+1. I can connect a running Dolos node to Adder to watch blockchain events in real time.
 2. I can configure Adder to connect to a Cardano Node.
 3. I can use Adder to filter blockchain events by type, address, policy, or stake pool.
 
