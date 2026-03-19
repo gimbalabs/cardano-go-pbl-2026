@@ -1,237 +1,229 @@
-# Filter by Event Type
+# Filter Blockchain Events with Adder
 
-When building blockchain applications, you rarely need to process every piece of data flowing through the chain. Filtering by event type lets you focus your indexer on exactly the data you need—whether that's tracking new blocks, monitoring transactions, or handling chain rollbacks. This capability is fundamental for building efficient, purpose-built indexers.
+When building blockchain applications, you rarely need to process every event on the chain. Adder provides a composable pipeline filter system that lets you focus on exactly the data your application needs — before it reaches your event handler.
 
-## What are Event Types?
+In this lesson you'll learn all four filter types: event type, address, policy ID, and stake pool.
 
-Adder produces three primary event types from blockchain monitoring:
+## Two Filtering Approaches
 
-| Event Type | Description | Use Case |
-|------------|-------------|----------|
-| `chainsync.block` | Emitted when a new block is added to the chain | Block explorers, epoch tracking, slot monitoring |
-| `chainsync.transaction` | Emitted for each transaction in a block | Payment tracking, NFT monitoring, DEX activity |
-| `chainsync.rollback` | Emitted when the blockchain rolls back | State recovery, data consistency, alerting |
+In Lesson 201.2 you saw events flow through `handleEvent` unfiltered. Adder gives you two ways to filter:
+
+| Approach | How it works | When to use it |
+|----------|-------------|----------------|
+| **Manual (in handler)** | Check `evt.Type` and return early | Learning, simple one-off filters |
+| **Pipeline filters** | Add filter components before the handler | Production code, composable filters |
+
+This lesson covers both, starting with manual filtering for clarity and moving to pipeline filters for the address, policy, and pool cases.
 
 ## Prerequisites
 
-Before you begin, make sure you have:
-
-* Completed Lesson 201.1 (running the Adder Starter Kit)
+* Completed Lesson 201.2 (Adder connected to your Dolos instance)
 * Your Dolos instance running on preprod
-* The Adder starter kit cloned and working from Lesson 201.1
-* Basic understanding of Go syntax
-
-## Overview of the Process
-
-Here's what you'll do to filter by event type:
-
-1. Locate the event handler function in the code
-2. Add a condition to check the event type
-3. Comment out the status updates for cleaner output
-4. Run the modified indexer
-5. Experiment with different event types
-
-## Step-by-Step Instructions
-
-### Step 1: Open the Main File
-
-**What to do:**
-Open `./cmd/adder-publisher/main.go` in your editor. Locate the `handleEvent` function — this is where all blockchain events are processed.
-
-**-- INSERT SCREENSHOT 1 HERE --**
-
-**Why it matters:**
-The `handleEvent` function is the callback that receives every event from the blockchain. By modifying this function, you control what your indexer does with each event.
-
-**Expected result:**
-You should see a function that looks like this:
-
-```go
-func handleEvent(evt event.Event) error {
-    slog.Info(fmt.Sprintf("%v", evt))
-    return nil
-}
-```
+* The Adder starter kit cloned and configured
 
 ---
 
-### Step 2: Add Event Type Filtering
+## Part 1: Filter by Event Type
 
-**What to do:**
-Modify the `handleEvent` function to only process transaction events. Add a condition that checks the event type and returns early for events you don't want to process.
+### What are Event Types?
 
-**-- INSERT SCREENSHOT 2 HERE --**
+Adder produces three primary event types:
 
-Replace the function with:
+| Event Type | Description |
+|------------|-------------|
+| `chainsync.block` | A new block added to the chain |
+| `chainsync.transaction` | A transaction within a block |
+| `chainsync.rollback` | The chain rolling back |
+
+### How to Filter
+
+Open `./cmd/adder-publisher/main.go` and modify `handleEvent`:
 
 ```go
 func handleEvent(evt event.Event) error {
-    // Only process transaction events
     if evt.Type != "chainsync.transaction" {
         return nil
     }
-
     slog.Info(fmt.Sprintf("Transaction: %v", evt))
     return nil
 }
 ```
 
-**Why it matters:**
-This pattern—checking the event type and returning early—is the standard approach for filtering in event-driven systems. It keeps your processing logic clean and efficient.
+Returning `nil` early for unwanted types is the standard pattern for event-driven filtering.
 
-**Expected result:**
-Your code should compile without errors when saved.
+**To filter for blocks instead**, change the condition to `evt.Type != "chainsync.block"`. Block events contain slot number, block hash, issuer pool ID, and transaction count. They appear less frequently (~every 20 seconds on preprod).
+
+### Optional: Quieter Output
+
+To suppress the ChainSync status messages and see only your filtered events, comment out `WithStatusUpdateFunc` in `inputOpts`:
+
+```go
+// input_chainsync.WithStatusUpdateFunc(updateStatus),
+```
 
 ---
 
-### Step 3: Comment Out the Status Updates (Optional but Recommended)
+## Part 2: Filter by Address
 
-**What to do:**
-Before running, locate the `updateStatus` function and where it's registered. You'll see code like this:
+Address filtering uses Adder's pipeline filter system — a more powerful approach than manual checks.
 
-```go
-func updateStatus(status input_chainsync.ChainSyncStatus) {
-    slog.Info(fmt.Sprintf("ChainSync status update: %v\n", status))
-}
-```
-
-This function is registered in the input options via `input_chainsync.WithStatusUpdateFunc(updateStatus)`.
-
-To see only your filtered events, comment out this line in the input options:
+### The Filter Packages
 
 ```go
-inputOpts := []input_chainsync.ChainSyncOptionFunc{
-    input_chainsync.WithAutoReconnect(true),
-    input_chainsync.WithIntersectTip(true),
-    // input_chainsync.WithStatusUpdateFunc(updateStatus),  // Comment this out
-    input_chainsync.WithNetworkMagic(cfg.Magic),
-    input_chainsync.WithSocketPath(cfg.SocketPath),
-}
+import (
+    filter_chainsync "github.com/blinklabs-io/adder/filter/chainsync"
+    filter_event "github.com/blinklabs-io/adder/filter/event"
+)
 ```
 
-**Why it matters:**
-The `updateStatus` function logs chain synchronization status messages (like tip updates and sync progress) separately from blockchain events. While useful for debugging connection issues, these status messages can clutter your output when you're trying to focus on filtered events. Commenting it out gives you cleaner output showing only transactions or blocks.
+- `filter_event` — filters by event type (block, transaction, rollback)
+- `filter_chainsync` — filters by Cardano-specific criteria (address, policy, pool)
 
----
+> **Note:** In Adder v0.36.0+, `filter/chainsync` is renamed to `filter/cardano`. The API is identical — only the import path and type names change. Check `go.mod` to see which version you have.
 
-### Step 4: Run the Filtered Indexer
+### The Example Script
 
-**What to do:**
-Open a terminal in your workspace and run the indexer:
+Open `./cmd/event-address-filter/main.go`. This script demonstrates pipeline filters:
+
+```go
+// Event type filter — only transactions
+filterEvent := filter_event.New(
+    filter_event.WithTypes([]string{"chainsync.transaction"}),
+)
+p.AddFilter(filterEvent)
+
+// Address filter
+filterChainsync := filter_chainsync.New(
+    filter_chainsync.WithAddresses(
+        []string{
+            "addr_test1qz...", // your preprod address
+        },
+    ),
+)
+p.AddFilter(filterChainsync)
+```
+
+**Make sure to update the Config** at the top of `main()` with your Dolos socket path and magic `1`, the same as in Lesson 201.1.
+
+**-- INSERT SCREENSHOT 1 HERE: event-address-filter/main.go showing updated Config and filters --**
+
+### Running It
 
 ```bash
-go run ./cmd/adder-publisher
+go run ./cmd/event-address-filter
 ```
 
-**-- INSERT SCREENSHOT 3 HERE --**
+The indexer starts silently. Once you send a transaction from your monitored address, it will appear in the terminal within ~20 seconds (next block). All other network transactions are silently dropped by the pipeline.
 
-**Understanding the output:**
-Each transaction event logged to your terminal contains structured data about a Cardano transaction. Here's what you're seeing:
+**-- INSERT SCREENSHOT 2 HERE: terminal output showing a filtered transaction event --**
 
-- **Type**: `chainsync.transaction` — confirms this is a transaction event
-- **Timestamp**: When the event was received
-- **Context**: Block information including slot number and block hash where this transaction was included
-- **Payload**: The transaction data itself, including:
-  - Transaction hash (the unique identifier)
-  - Inputs (UTxOs being spent)
-  - Outputs (new UTxOs being created, with addresses and values)
-  - Fees paid
-  - Any metadata or script data
+### Composing Filters
 
-The output may look dense at first—that's normal. In later lessons, you'll learn to extract specific fields from this data structure.
+You can monitor multiple addresses by adding them to the slice:
 
-**Why it matters:**
-Running the indexer with your filter lets you see only transaction events in the output, demonstrating that your filter is working correctly.
+```go
+filter_chainsync.WithAddresses([]string{"addr_test1q...", "addr_test1q..."})
+```
 
-**Expected result:**
-You should see only transaction events logged to the terminal. Block events will be silently ignored. If you commented out the status updates, your output will be cleaner—showing only the events that pass your filter.
+Filters are composable — both the event type filter and the address filter must pass before an event reaches your handler.
 
 ---
 
-### Step 5: Experiment with Different Event Types
+## Part 3: Filter by Policy ID
 
-**What to do:**
-Try filtering for block events instead. Change your filter condition:
+Policy ID filtering catches all transactions that mint, burn, or transfer any asset under a given policy.
+
+### What is a Policy ID?
+
+Every native asset on Cardano is identified by a **Policy ID** (56-character hex string) and an optional **Asset Name**. Filtering by policy ID catches the entire token family — every asset minted under that policy.
+
+### How to Filter
+
+In `./cmd/event-address-filter/main.go`, replace the address filter with a policy filter:
 
 ```go
-func handleEvent(evt event.Event) error {
-    // Only process block events
-    if evt.Type != "chainsync.block" {
-        return nil
-    }
-
-    slog.Info(fmt.Sprintf("Block: %v", evt))
-    return nil
-}
+filterChainsync := filter_chainsync.New(
+    filter_chainsync.WithPolicies(
+        []string{
+            "29aa6a65f5c890cfa428d59b15dec6293bf4ff0a94305c957508dc78", // Andamio access token
+        },
+    ),
+)
 ```
 
-Run the indexer again and observe the different output.
+**-- INSERT SCREENSHOT 3 HERE: main.go showing WithPolicies filter --**
 
-**-- INSERT SCREENSHOT 4 HERE --**
+### Choosing a Policy ID
 
-**Understanding the block output:**
-Block events have a different structure than transactions:
+You need a policy with active transactions on preprod. Options:
+- **Andamio access token** (shown above) — has regular activity on preprod
+- Your own tokens from Module 102
+- Any policy with recent activity on [Cardanoscan Preprod](https://preprod.cardanoscan.io/)
 
-- **Type**: `chainsync.block` — confirms this is a block event
-- **Context**: Information about where this block fits in the chain
-- **Payload**: Block-level data including:
-  - Block hash
-  - Slot number (when the block was produced)
-  - Block number (height in the chain)
-  - Issuer (the stake pool that produced this block, as a pool ID)
-  - Transaction count (how many transactions are in this block)
-  - Block size
+In the output, look for your policy ID in the `mint` field (if tokens are being minted/burned) or in the multi-asset values of transaction outputs.
 
-Notice that blocks appear less frequently than transactions—on preprod, roughly every 20 seconds. Each block contains multiple transactions, so filtering for blocks gives you a higher-level view of chain activity.
+---
 
-**Why it matters:**
-Different event types contain different data structures. Block events show you slot numbers, block hashes, and issuer information. Understanding what each event type provides helps you choose the right filter for your application.
+## Part 4: Filter by Stake Pool
 
-**Expected result:**
-You should see block events appearing less frequently than transactions (roughly every 20 seconds on preprod), with different data in the output.
+Pool ID filtering operates at the block level — you're tracking which pools produce blocks, not which transactions those blocks contain.
+
+### How to Filter
+
+You need to change both filters: event type to `chainsync.block`, and the chainsync filter to `WithPoolIds`:
+
+```go
+filterEvent := filter_event.New(
+    filter_event.WithTypes([]string{"chainsync.block"}),
+)
+
+filterChainsync := filter_chainsync.New(
+    filter_chainsync.WithPoolIds(
+        []string{
+            "pool1ynfnjspgckgxjf2zeye8s33jz3e3ndk9pcwp0qn8kq9dv4geus6",
+        },
+    ),
+)
+```
+
+Adder accepts pool IDs in both **bech32** (`pool1...`) and **hex** (56-char) formats.
+
+**-- INSERT SCREENSHOT 4 HERE: main.go showing block event filter with WithPoolIds --**
+
+### Choosing a Pool to Track
+
+Visit [Cardanoscan Preprod Pools](https://preprod.cardanoscan.io/pools) and pick an active pool. The key field in the block output is the **issuer** — this will match your filter.
+
+Blocks from a specific pool arrive infrequently — a pool may produce one every few minutes depending on its stake. Be patient.
 
 ---
 
 ## You'll Know You're Successful When:
 
-* Your indexer only logs events matching your filter condition
-* Changing the filter type changes what appears in your terminal
-* You can articulate why you'd filter for blocks vs transactions vs rollbacks
+* **Event type filtering**: Only the event type you selected appears in your terminal
+* **Address filtering**: Your test transaction appears after being included in a block; all other transactions are silently dropped
+* **Policy filtering**: Transactions involving your policy ID are detected; you can identify the policy in the output
+* **Pool filtering**: Block events appear only for your target pool's blocks
 
-## Common Issues and Solutions
+## Common Issues
 
-### Issue: No events appearing after adding filter
-**Why it happens:** You may have a typo in the event type string.
-**How to fix it:** Event types are case-sensitive. Use exactly: `chainsync.block`, `chainsync.transaction`, or `chainsync.rollback`.
+**No events after adding filter** — Check for typos in event type strings (`chainsync.transaction`, `chainsync.block`, `chainsync.rollback` are case-sensitive). For address/policy filters, verify the value exactly matches what's on-chain.
 
-### Issue: Rollback events never appear
-**Why it happens:** Rollbacks are rare on stable networks.
-**How to fix it:** This is expected behavior. Rollbacks occur during network instability or when stake pools produce competing blocks. On preprod, you may wait hours or days to see one naturally.
+**Magic mismatch / connection errors** — Confirm your `Config` in `event-address-filter/main.go` has the correct socket path and magic `1` for preprod.
 
-## Tips from Experience
+**Still seeing all events** — Verify `p.AddFilter(filterChainsync)` is called in the pipeline setup.
 
-💡 **Tip 1**: Start with transaction filtering—it's the most common use case and gives you the most data to work with.
+**No pool blocks after several minutes** — The pool may be inactive on preprod. Check its recent block history on a block explorer and try a different pool.
 
-💡 **Tip 2**: You can filter for multiple event types by using OR logic: `if evt.Type != "chainsync.transaction" && evt.Type != "chainsync.block"`.
+## Tips
 
-💡 **Tip 3**: Consider logging the event type itself during development (`slog.Info(evt.Type)`) to see what's flowing through before adding filters.
+**Tip 1**: Filters are composable — add both a `filter_event` and a `filter_chainsync` to a pipeline and only events passing both will reach your handler.
 
-## Practice This Capability
+**Tip 2**: For debugging, temporarily remove all filters to confirm events are flowing through, then add filters back one at a time.
 
-1. **Practice Task 1**: Create a filter that only logs block events, then count how many blocks are produced in one minute
-2. **Practice Task 2**: Modify your filter to log both blocks AND transactions, but format them differently
-3. **Practice Task 3**: Add a counter that tracks how many of each event type you've seen since starting the indexer
-
-## What You've Built
-
-You now have the capability to filter blockchain events by type. This is the foundation of targeted indexing—instead of processing everything, you can focus on exactly the data your application needs.
+**Tip 3**: To combine address and policy filtering (e.g., track a specific token at a specific address), use `WithAddresses` and `WithPolicies` together in the same `filter_chainsync.New(...)` call.
 
 ## Next Steps
 
-* Learn to filter transactions by address (Lesson 201.4)
-* Explore filtering by policy ID for token tracking (Lesson 201.5)
-* Consider how event type filtering combines with other filters for precise data capture
-
----
-
-*Generated with Andamio Lesson Coach*
+* Module 202 — querying the blockchain for historical and global data
+* Consider what filtering logic your project needs and sketch out which filter types you'd combine
