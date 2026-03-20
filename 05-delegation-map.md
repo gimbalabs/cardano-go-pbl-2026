@@ -6,11 +6,11 @@
 ## Summary
 
 
-| Responsibility            | Count | SLTs                                                                                                                                                |
-| ------------------------- | ----- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Agent builds now (Ready)  | 7     | 099.1, 099.2, 099.3, 099.4, 100.1, 204.5, 301.2                                                                                                     |
-| Agent builds with context | 32    | 100.2-100.7, 101.1-101.4, 102.3-102.6, 201.1-201.3, 202.1, 202.2, 202.4, 202.5, 203.1, 203.2, 203.5, 203.6, 204.1-204.4, 204.6, 301.1, 301.3       |
-| Human co-authors required | 5     | 102.1, 102.2, 202.3, 203.3, 203.4                                                                                                                   |
+| Responsibility            | Count | SLTs                                                                                                                                         |
+| ------------------------- | ----- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| Agent builds now (Ready)  | 7     | 099.1, 099.2, 099.3, 099.4, 100.1, 204.5, 301.2                                                                                              |
+| Agent builds with context | 32    | 100.2-100.7, 101.1-101.4, 102.3-102.6, 201.1-201.3, 202.1, 202.2, 202.4, 202.5, 203.1, 203.2, 203.5, 203.6, 204.1-204.4, 204.6, 301.1, 301.3 |
+| Human co-authors required | 5     | 102.1, 102.2, 202.3, 203.3, 203.4                                                                                                            |
 
 
 ---
@@ -25,22 +25,24 @@
 
 ## Current Lesson Coverage (from `lessons/`)
 
-| SLT | Coverage Status | Notes |
-|-----|-----------------|-------|
-| 099.4 | Draft exists, ready to finalize | Fiber API lesson aligned with readiness state |
-| 100.3 | Draft exists | Also duplicated in nested path |
-| 100.4 | Draft exists | In expected module path |
-| 102.1 | Draft exists, needs expert review | Marked Needs Human in readiness |
-| 102.2 | Draft exists, needs expert review | Marked Needs Human in readiness |
-| 102.3 | Draft exists | Marked Needs Context in readiness |
-| 201.1 | Draft exists, needs screenshot pass | Placeholder markers remain |
-| 201.2 | Draft exists | No placeholder markers found |
-| 201.3 | Draft exists, needs screenshot pass | Placeholder markers remain |
-| 201.4 | Draft exists, out-of-outline | Not currently in `00-course.md` |
-| 201.5 | Draft exists, out-of-outline | Not currently in `00-course.md` |
-| 201.6 | Draft exists, out-of-outline | Not currently in `00-course.md` |
-| 202.1 | Draft exists | Marked Needs Context in readiness |
-| 202.2 | Draft exists | Marked Needs Context in readiness |
+
+| SLT   | Coverage Status                     | Notes                                         |
+| ----- | ----------------------------------- | --------------------------------------------- |
+| 099.4 | Draft exists, ready to finalize     | Fiber API lesson aligned with readiness state |
+| 100.3 | Draft exists                        | Also duplicated in nested path                |
+| 100.4 | Draft exists                        | In expected module path                       |
+| 102.1 | Draft exists, needs expert review   | Marked Needs Human in readiness               |
+| 102.2 | Draft exists, needs expert review   | Marked Needs Human in readiness               |
+| 102.3 | Draft exists                        | Marked Needs Context in readiness             |
+| 201.1 | Draft exists, needs screenshot pass | Placeholder markers remain                    |
+| 201.2 | Draft exists                        | No placeholder markers found                  |
+| 201.3 | Draft exists, needs screenshot pass | Placeholder markers remain                    |
+| 201.4 | Draft exists, out-of-outline        | Not currently in `00-course.md`               |
+| 201.5 | Draft exists, out-of-outline        | Not currently in `00-course.md`               |
+| 201.6 | Draft exists, out-of-outline        | Not currently in `00-course.md`               |
+| 202.1 | Draft exists                        | Marked Needs Context in readiness             |
+| 202.2 | Draft exists                        | Marked Needs Context in readiness             |
+
 
 ---
 
@@ -87,13 +89,13 @@ Focus context collection on high-leverage dependencies first:
 ## Human Responsibilities (Co-Author Required)
 
 
-| SLT   | Why Human Needed                            | Human Does                                                      | Agent Does                                 |
-| ----- | ------------------------------------------- | --------------------------------------------------------------- | ------------------------------------------ |
+| SLT   | Why Human Needed                            | Human Does                                                                        | Agent Does                                       |
+| ----- | ------------------------------------------- | --------------------------------------------------------------------------------- | ------------------------------------------------ |
 | 102.1 | Bursa API unknown for code-quality coaching | Review existing draft against canonical wallet-creation flow; provide corrections | Revise current lesson draft with expert feedback |
-| 102.2 | Apollo tx builder API unknown               | Review existing draft against canonical simple tx flow; provide corrections | Revise current lesson draft with expert feedback |
-| 202.3 | Adder storage model/API unknown             | Provide storage/retrieval patterns and reference implementation | Convert to learner-friendly lesson format  |
-| 203.3 | Script minting has fund-safety risk         | Provide validated script-minting flow and safety constraints    | Draft instructional flow and checkpoints   |
-| 203.4 | Script spending has fund-safety risk        | Provide validated unlock flow and failure-mode guidance         | Draft lesson framing and practice rubric   |
+| 102.2 | Apollo tx builder API unknown               | Review existing draft against canonical simple tx flow; provide corrections       | Revise current lesson draft with expert feedback |
+| 202.3 | Adder storage model/API unknown             | Provide storage/retrieval patterns and reference implementation                   | Convert to learner-friendly lesson format        |
+| 203.3 | Script minting has fund-safety risk         | Provide validated script-minting flow and safety constraints                      | Draft instructional flow and checkpoints         |
+| 203.4 | Script spending has fund-safety risk        | Provide validated unlock flow and failure-mode guidance                           | Draft lesson framing and practice rubric         |
 
 
 ---
@@ -129,3 +131,4 @@ Focus context collection on high-leverage dependencies first:
 - This delegation map follows the readiness tiers directly to minimize rework.
 - Phase 6 should now prioritize creating `assets/code-examples/README.md` first, since this course is heavily Developer Documentation / How To Guide oriented.
 - Product Demo screenshot needs should be decided during lesson-type classification backfill (`03-lesson-type-classification.md`), since that artifact is currently missing.
+
