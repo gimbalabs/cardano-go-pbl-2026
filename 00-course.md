@@ -4,10 +4,10 @@ credential: Cardano Go Developer
 audience: Go developers new to Cardano, or Cardano developers learning Go
 duration: 8-12 hours (full course)
 prerequisites: Go programming fundamentals, basic terminal familiarity
-status: delegation-mapped
+status: building
 created: 2024-12-12
-last_updated: 2026-03-05
-notes: 45 SLTs across 10 modules (consolidated 201 from 6→3, expanded 099 from 3→4). Delegation map created; backfill still needed for phases 2-3 artifacts.
+last_updated: 2026-04-09
+notes: 45 SLTs across 10 modules (consolidated 201 from 6→3, expanded 099 from 3→4). Course is in active lesson build and partial compile reconciliation; backfill still needed for phases 2-3 artifacts.
 ---
 
 # Cardano Go PBL

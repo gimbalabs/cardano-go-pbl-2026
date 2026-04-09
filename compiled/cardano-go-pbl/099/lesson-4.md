@@ -131,6 +131,7 @@ Pointer quick meaning in this lesson:
 - `*fiber.Ctx`: pointer to per-request context object created for each request.
 
 How to think about `*fiber.Ctx`:
+
 - It is your handler's toolbox for one request.
 - Read request data from it (path params, query params, body).
 - Write response data with it (status code, JSON/text body).
