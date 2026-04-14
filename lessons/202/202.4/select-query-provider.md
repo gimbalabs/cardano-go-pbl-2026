@@ -53,8 +53,8 @@ Dolos is a Cardano data node that exposes three APIs from a single running proce
 | Interface | What it gives you |
 |-----------|------------------|
 | Ouroboros Unix socket | ChainSync — what Adder connects to |
-| gRPC | Structured queries for chain data |
-| Mini Blockfrost HTTP | REST queries compatible with the Blockfrost API |
+| gRPC (UTxORPC) | Current UTxO state queries — what's spendable at an address right now |
+| Mini Blockfrost HTTP | Transaction history and chain metadata, compatible with the Blockfrost REST API |
 
 **When to choose:** You are already running Dolos (you are — it's your Adder connection), you want local latency, and you want rollback notifications without polling.
 
@@ -65,8 +65,8 @@ Dolos is a Cardano data node that exposes three APIs from a single running proce
 You are already running Dolos. Adder is already connected to it. That is not a coincidence — Dolos was chosen as the infrastructure for this course because one running process covers what multiple tools would otherwise require:
 
 - Adder connects to it via the Ouroboros socket (Module 201 onwards)
-- gRPC queries will be used in Module 202.5 to enrich event data
-- The mini Blockfrost endpoint gives you a REST fallback that needs no API key
+- The mini Blockfrost endpoint lets you make Blockfrost-style REST queries against your local Dolos data — no API key needed, but limited to data Dolos has synced since your Mithril snapshot (not full history)
+- In 202.5, you will use the hosted Blockfrost API to backfill historical data that Dolos does not hold
 
 The local socket connection also means zero network latency between your indexer and its data source. And there is one more benefit that matters specifically because of the code you wrote in 202.3.
 
@@ -99,18 +99,21 @@ The good news: the `slot` column you already store is everything you need. A rol
 
 ---
 
-## Step 1: Add a Rollback Filter
+## Step 1: Update the Event Filter
 
-Open `cmd/event-address-filter/main.go`. After the existing `filterEvent` definition, add a separate filter for rollback events and register it on the pipeline:
+Open `cmd/event-address-filter/main.go`. The existing `filterEvent` only passes `chainsync.transaction`. Adder applies pipeline filters in series — so adding a second filter for `chainsync.rollback` would create an AND condition, meaning nothing passes both. Instead, combine both types into a single filter:
 
 ```go
-rollbackFilter := filter_event.New(
-    filter_event.WithTypes([]string{"chainsync.rollback"}),
+filterEvent := filter_event.New(
+    filter_event.WithTypes([]string{"chainsync.transaction", "chainsync.rollback"}),
 )
-p.AddFilter(rollbackFilter)
+p.AddFilter(filterEvent)
 ```
 
-Keeping the two filters separate makes each one's purpose explicit. The `"chainsync.rollback"` string is defined in the Adder source — you can verify it at `~/go/pkg/mod/github.com/blinklabs-io/adder@v0.35.0/input/chainsync/chainsync.go`.
+Both event type strings are defined in the Adder source — you can verify them at `~/go/pkg/mod/github.com/blinklabs-io/adder@v0.35.0/input/chainsync/chainsync.go`.
+
+> **Two filters, two jobs**
+> `filterEvent` and `filterChainsync` are doing different things. `filterEvent` is a gate on event type — it decides which kinds of events are allowed into the rest of the pipeline at all. `filterChainsync` is a gate on payload content — it inspects each transaction's outputs and passes only those involving your watched address. Rollback events have no outputs, so `filterChainsync` passes them straight through regardless of the address filter. The two filters are independent concerns working in series.
 
 ---
 
@@ -163,7 +166,7 @@ You should see the same output as 202.3 — the rollback handler is now correct,
 
 ## What Just Happened
 
-You made a provider selection decision — Dolos — and saw a concrete consequence of it: rollback events arrive via ChainSync and your indexer can respond to them with a single DELETE query. The `slot` column was already there from 202.3. The only additions were a separate filter and four lines in the handler.
+You made a provider selection decision — Dolos — and saw a concrete consequence of it: rollback events arrive via ChainSync and your indexer can respond to them with a single DELETE query. The `slot` column was already there from 202.3. The only additions were a combined filter and four lines in the handler.
 
 If you had chosen a hosted API instead, rollback detection would require polling and comparison logic. The choice of infrastructure shaped what your application can do.
 
@@ -178,7 +181,7 @@ Selecting a query provider is not just a performance or cost decision. It determ
 - How much infrastructure you are responsible for
 - What your query interface looks like (REST, gRPC, SQL)
 
-For this course, Dolos satisfies all four: it gives you real-time events (via ChainSync), rollback notifications (via ChainSync), current state queries (via gRPC and mini Blockfrost), and keeps infrastructure to a single local process you are already running.
+For this course, Dolos satisfies all four: it gives you real-time events (via ChainSync), rollback notifications (via ChainSync), current state queries (via mini Blockfrost), and keeps infrastructure to a single local process you are already running. In 202.5 you will reach beyond Dolos to hosted Blockfrost for full transaction history — data that a lightweight local node does not hold.
 
 ---
 
@@ -196,10 +199,9 @@ Dolos is not running. Start it with `dolos daemon` from your Dolos directory and
 
 1. Add a log line before the DELETE that prints how many rows will be affected: query `SELECT COUNT(*) FROM transactions WHERE slot > ?` first and log the result
 2. Think through: if your schema also stored transaction outputs (with their own rows), would the `slot` column on each output row be enough to handle rollbacks the same way?
-3. Look at the three Dolos API interfaces in `dolos.toml` — confirm gRPC and mini Blockfrost are enabled, since you will need them in 202.5
 
 ---
 
 ## What's Next
 
-- Lesson 202.5: Combine live event data with historical query data using Dolos's gRPC interface
+- Lesson 202.5: Combine live event data with historical query data using Blockfrost
