@@ -95,10 +95,12 @@ defer db.Close()
 
 _, err = db.Exec(`
     CREATE TABLE IF NOT EXISTS transactions (
-        id        INTEGER PRIMARY KEY AUTOINCREMENT,
-        tx_hash   TEXT NOT NULL UNIQUE,
-        slot      INTEGER NOT NULL,
-        stored_at DATETIME DEFAULT CURRENT_TIMESTAMP
+        id           INTEGER PRIMARY KEY AUTOINCREMENT,
+        tx_hash      TEXT NOT NULL UNIQUE,
+        slot         INTEGER,
+        block_height INTEGER,
+        source       TEXT NOT NULL DEFAULT 'adder',
+        stored_at    DATETIME DEFAULT CURRENT_TIMESTAMP
     )
 `)
 if err != nil {
@@ -108,6 +110,8 @@ slog.Info("database ready")
 ```
 
 `CREATE TABLE IF NOT EXISTS` means this is safe to run every time — it only creates the table on the first run.
+
+A few columns here are not used yet in this lesson: `block_height` and `source`. They're included now because in 202.5 you will add a second data source — hosted Blockfrost — which returns `block_height` instead of `slot`. Designing the schema to accommodate both sources from the start means you won't need to migrate or delete your database later. `source` defaults to `'adder'` so existing rows are correctly labelled without any extra code.
 
 ---
 
@@ -135,6 +139,9 @@ filterChainsync := filter_chainsync.New(
     ),
 )
 ```
+
+> **Two filters, two jobs**
+> The pipeline has two filters in series. `filterEvent` is a gate — it drops everything except `chainsync.transaction` events before they reach the second filter. `filterChainsync` then inspects each transaction's outputs and passes only those involving your watched address. You don't need to change either for this lesson — but you will revisit them in 202.4.
 
 ---
 
