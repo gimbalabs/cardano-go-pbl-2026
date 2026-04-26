@@ -1,60 +1,50 @@
-# SLT 203.3: I Can Build a Transaction That Mints or Burns Tokens Using a Plutus Validator
+# SLT 203.3: I Can Build a Transaction That Attaches Data to a New Output on the Blockchain
 
-In 203.2 you minted tokens with a native script — policy controlled by key signatures and time locks. Now you step up to **Plutus validators**, where the minting policy is arbitrary on-chain logic written in Aiken.
+A UTxO on Cardano can carry a **datum** — structured data stored alongside the value. To interact with a smart contract, you must first **lock** funds at the contract address with a datum that encodes your intent. The validator reads that datum when you try to unlock the funds.
 
-The key difference: a Plutus minting validator requires a **redeemer** — data your transaction passes to the script, which the script uses to decide whether minting is allowed.
+This lesson covers building the lock transaction: sending ADA to the hello_world script address with an inline datum.
 
 ---
 
 ## Prerequisites
 
-- Completed 203.1 (reading blueprint types and constructing `PlutusData`)
-- Completed 203.2 (native script minting)
-- An Aiken project compiled with `aiken build`, giving you a `plutus.json`
+- Completed 203.1 (reading blueprint types, constructing `PlutusData`)
+- Completed 203.2 (basic Apollo transaction building)
 - A funded preprod wallet and Blockfrost API key
 
 ---
 
-## The Example Contract
+## Background: Inline vs Witness Set Datums
 
-```aiken
-// validators/my_token.ak
+| Strategy | How it works | When to use |
+|----------|-------------|-------------|
+| **Inline datum** | Datum bytes stored in the UTxO output itself | Default. Scripts and indexers can read it without extra lookup. |
+| **Witness set datum** | Datum in the transaction witness set; only hash in the output | Legacy pattern. Only visible at transaction time, not in UTxO state. |
 
-pub type MintRedeemer {
-  action: ByteArray,
-}
+`PayToContract(address, &datum, lovelace, isInline)` controls this via the last argument. Always use `true` (inline) for new code.
 
-validator my_token {
-  mint(redeemer: MintRedeemer, _policy_id: ByteArray, _self: Transaction) {
-    redeemer.action == "mint"
-  }
-}
+---
+
+## The Contract
+
+Using the `hello_world` validator from 203.1. The spend handler checks:
+1. The datum's `owner` field matches a key in `extra_signatories`
+2. The redeemer `msg` is `"HelloSpendRedeemer"`
+
+The datum type from the blueprint:
+```
+Datum: constructor 0, fields: [owner: #bytes]  → tag 121
 ```
 
-After `aiken build`, `plutus.json` contains:
-
-```json
-"my_token/MintRedeemer": {
-  "title": "MintRedeemer",
-  "dataType": "constructor",
-  "index": 0,
-  "fields": [
-    { "title": "action", "dataType": "#bytes" }
-  ]
-}
-```
-
-From 203.1: constructor index 0 → CBOR tag 121, one `#bytes` field.
-
-The `hash` field in the validator entry is your **policy ID**. The `compiledCode` field is the hex-encoded CBOR script you attach to the transaction.
+`owner` is the 28-byte payment key hash of whoever can unlock the funds.
 
 ---
 
 ## Setup
 
 ```bash
-mkdir 203-validator-mint && cd 203-validator-mint
-go mod init 203-validator-mint
+mkdir 203-lock && cd 203-lock
+go mod init 203-lock
 go get github.com/Salvionied/apollo
 ```
 
@@ -62,7 +52,7 @@ Copy your `plutus.json` into this directory.
 
 ---
 
-## Complete Example
+## Lock Transaction
 
 ```go
 package main
@@ -75,7 +65,7 @@ import (
 
 	"github.com/Salvionied/apollo"
 	"github.com/Salvionied/apollo/constants"
-	"github.com/Salvionied/apollo/serialization"
+	"github.com/Salvionied/apollo/serialization/Address"
 	"github.com/Salvionied/apollo/serialization/PlutusData"
 	"github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
 )
@@ -87,46 +77,29 @@ const (
 
 type Blueprint struct {
 	Validators []struct {
-		Title        string `json:"title"`
-		CompiledCode string `json:"compiledCode"`
-		Hash         string `json:"hash"`
+		Title string `json:"title"`
+		Hash  string `json:"hash"`
 	} `json:"validators"`
 }
 
-// loadScript decodes compiledCode from plutus.json and returns it as a PlutusV3Script.
-// compiledCode is hex-encoded CBOR — hex.DecodeString gives the raw bytes Apollo needs.
-func loadScript(path, title string) (PlutusData.PlutusV3Script, string, error) {
-	data, err := os.ReadFile(path)
-	if err != nil {
-		return nil, "", err
-	}
-	var bp Blueprint
-	if err := json.Unmarshal(data, &bp); err != nil {
-		return nil, "", err
-	}
-	for _, v := range bp.Validators {
-		if v.Title == title {
-			code, err := hex.DecodeString(v.CompiledCode)
-			if err != nil {
-				return nil, "", err
-			}
-			return PlutusData.PlutusV3Script(code), v.Hash, nil
-		}
-	}
-	return nil, "", fmt.Errorf("validator %q not found", title)
+// scriptAddress derives a preprod enterprise address from a validator hash.
+// AddressFromBytes(payment, paymentIsScript, staking, stakingIsScript, network)
+func scriptAddress(scriptHash string) Address.Address {
+	hashBytes, _ := hex.DecodeString(scriptHash)
+	return *Address.AddressFromBytes(hashBytes, true, nil, false, constants.PREPROD)
 }
 
-// buildMintRedeemer returns the PlutusData for MintRedeemer.
-// Blueprint: constructor 0, fields: [action: #bytes]
-// MintAssetsWithRedeemer takes PlutusData directly, not a Redeemer struct.
-func buildMintRedeemer(action []byte) PlutusData.PlutusData {
+// buildDatum constructs the hello_world Datum.
+// Blueprint: constructor 0, fields: [owner: #bytes] → tag 121
+// PlutusArray = tagged constructor (Constr); PlutusBytes = raw byte field.
+func buildDatum(owner []byte) PlutusData.PlutusData {
 	return PlutusData.PlutusData{
-		TagNr:  121,
-		HasTag: true,
+		PlutusDataType: PlutusData.PlutusArray,
+		TagNr:          121,
 		Value: PlutusData.PlutusIndefArray{
 			PlutusData.PlutusData{
-				HasTag: false,
-				Value:  serialization.ByteString{Bytes: action},
+				PlutusDataType: PlutusData.PlutusBytes,
+				Value:          owner,
 			},
 		},
 	}
@@ -152,30 +125,41 @@ func main() {
 		panic(err)
 	}
 
-	// compiledCode → hex.DecodeString → PlutusV3Script(bytes)
-	// hash field from plutus.json is the policy ID (no derivation needed).
-	mintScript, policyId, err := loadScript("plutus.json", "my_token.mint")
+	// Read the spend validator hash from plutus.json.
+	data, err := os.ReadFile("plutus.json")
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println("Policy ID:", policyId)
+	var bp Blueprint
+	json.Unmarshal(data, &bp)
+	var spendHash string
+	for _, v := range bp.Validators {
+		if v.Title == "lesson203_1.hello_world.spend" {
+			spendHash = v.Hash
+		}
+	}
+	if spendHash == "" {
+		panic("hello_world.spend not found in plutus.json")
+	}
+
+	contractAddress := scriptAddress(spendHash)
+	fmt.Println("Script address:", contractAddress.String())
+
+	// GetAddress().PaymentPart is []byte — the wallet's 28-byte payment key hash.
+	// Set as datum.owner so only this wallet can satisfy the spend validator.
+	walletPkh := apollob.GetWallet().GetAddress().PaymentPart
+	datum := buildDatum(walletPkh)
 
 	utxos, err := bfc.Utxos(*apollob.GetWallet().GetAddress())
 	if err != nil {
 		panic(err)
 	}
 
-	redeemer := buildMintRedeemer([]byte("mint"))
-	mintUnit := apollo.NewUnit(policyId, "MyToken", 1000)
-
-	// MintAssetsWithRedeemer internally sets isEstimateRequired = true,
-	// so SetEstimationExUnitsRequired() is redundant but kept for clarity.
+	// isInline=true stores the datum bytes in the UTxO output itself.
+	// The unlock transaction in 203.4 reads it directly from the UTxO.
 	apollob, _, err = apollob.
 		AddLoadedUTxOs(utxos...).
-		AttachV3Script(mintScript).
-		MintAssetsWithRedeemer(mintUnit, redeemer).
-		PayToAddressBech32(apollob.GetWallet().GetAddress().String(), 2_000_000, mintUnit).
-		SetEstimationExUnitsRequired().
+		PayToContract(contractAddress, &datum, 5_000_000, true).
 		Complete()
 	if err != nil {
 		panic(err)
@@ -187,7 +171,8 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Println("Tx hash:", hex.EncodeToString(txId.Payload))
+	fmt.Println("Lock tx hash:", hex.EncodeToString(txId.Payload))
+	fmt.Println("Save this hash — you need it for 203.4.")
 }
 ```
 
@@ -197,67 +182,47 @@ Run it:
 go run .
 ```
 
-Check [preprod.cardanoscan.io](https://preprod.cardanoscan.io). The policy ID should match the printed hash. Quantity should be 1000.
+Wait ~20 seconds. Open the transaction on [preprod.cardanoscan.io](https://preprod.cardanoscan.io), click the output at the script address, and inspect the **Datum** tab. You will see the CBOR-encoded `{owner: <your-pkh>}` inline on the UTxO.
 
 ---
 
-## How the Script Flows: compiledCode → Transaction
+## What Each Step Does
 
-1. Aiken compiles the validator into flat-encoded Plutus Core
-2. `aiken build` wraps that in CBOR and hex-encodes it → `compiledCode` in `plutus.json`
-3. `hex.DecodeString(compiledCode)` gives you the CBOR bytes
-4. `PlutusData.PlutusV3Script(bytes)` wraps those bytes as a V3 script
-5. `AttachV3Script(script)` adds the script to the transaction witness set
-6. The ledger executes it using the redeemer you provided
-
----
-
-## Burning Tokens
-
-Use a negative quantity with the same redeemer:
-
-```go
-burnUnit := apollo.NewUnit(policyId, "MyToken", -500)
-
-apollob, _, err = apollob.
-    AddLoadedUTxOs(utxos...).
-    AttachV3Script(mintScript).
-    MintAssetsWithRedeemer(burnUnit, redeemer).
-    SetEstimationExUnitsRequired().
-    Complete()
-```
-
-The tokens to burn must be present in a UTxO included in `AddLoadedUTxOs`.
+| Step | Purpose |
+|------|---------|
+| `scriptAddress(hash)` | Builds a bech32 enterprise address from the validator hash in `plutus.json` |
+| `buildDatum(walletPkh)` | Constructs `PlutusData` matching blueprint `Datum` — tag 121, one `#bytes` field |
+| `PayToContract(addr, &datum, lovelace, true)` | Sends ADA to the script address; `true` stores the datum inline in the UTxO |
 
 ---
 
-## Native Script vs Validator Script
+## Datum Field Types: Quick Reference
 
-| | Native Script (203.2) | Validator Script (203.3) |
-|---|---|---|
-| Policy enforced by | Key signatures / time locks | Arbitrary on-chain logic |
-| Redeemer required | No | Yes — `PlutusData` |
-| Script attached via | `AttachNativeScript` | `AttachV3Script` |
-| Apollo mint method | `MintAssets` | `MintAssetsWithRedeemer` |
-| ExUnit estimation | Not needed | Set automatically by `MintAssetsWithRedeemer` |
+| Aiken type | Blueprint `dataType` | Go value in `PlutusData.Value` |
+|-----------|----------------------|--------------------------------|
+| `ByteArray` | `"#bytes"` | `PlutusData{PlutusDataType: PlutusBytes, Value: []byte{...}}` |
+| `Int` | `"#integer"` | `PlutusData{PlutusDataType: PlutusInt, Value: *big.NewInt(n)}` |
+| `Bool` (True) | `constructor, index: 1` | `PlutusData{PlutusDataType: PlutusArray, TagNr: 122, Value: PlutusIndefArray{}}` |
+| `Bool` (False) | `constructor, index: 0` | `PlutusData{PlutusDataType: PlutusArray, TagNr: 121, Value: PlutusIndefArray{}}` |
+| Nested record | `constructor, index: N` | Nested `PlutusData{PlutusDataType: PlutusArray, TagNr: 121+N, ...}` |
 
 ---
 
 ## Common Errors
 
-**`Script not found in witness set`** — you forgot `AttachV3Script`. The ledger cannot execute a script not in the transaction.
+**`validator not found`** — the `title` field in `plutus.json` includes the module prefix. Use `"lesson203_1.hello_world.spend"`, not `"hello_world.spend"`.
 
-**`Redeemer data mismatch`** — the `PlutusData` shape must match the blueprint exactly. Wrong constructor index or wrong field type fails on-chain.
+**`MinimumAdaNotMet`** — script outputs require a minimum ADA based on the datum size. `5_000_000` lovelace is safe for this datum.
 
-**Wrong script version** — if `plutus.json` says `"plutusVersion": "v3"` use `PlutusV3Script` / `AttachV3Script`. For `v2` use `PlutusV2Script` / `AttachV2Script`.
+**`Wrong field order`** — `PlutusIndefArray` is positional. If a datum has multiple fields, they must appear in the same order as the blueprint's `fields` array.
 
 ---
 
 ## Summary
 
-- `compiledCode` from `plutus.json`: `hex.DecodeString` → `PlutusV3Script(bytes)` → `AttachV3Script`.
-- `hash` from `plutus.json` is the policy ID directly — no derivation needed.
-- `MintAssetsWithRedeemer(unit, plutusData)` takes `PlutusData.PlutusData`, not a `Redeemer` struct.
-- Burning is identical with a negative quantity.
+- `PayToContract(address, &datum, lovelace, true)` sends funds to a script address with an inline datum.
+- Build the script address from `plutus.json` hash using `Address.AddressFromBytes(hash, true, nil, false, network)`.
+- The datum's `owner` field is your wallet's `GetAddress().PaymentPart` — `[]byte`.
+- Inline datums are stored in the UTxO itself; the unlock transaction can read them without supplying them again.
 
-In 203.4 you will use these same patterns to unlock funds held at a script address.
+In 203.4 you will unlock these funds by providing the correct redeemer and signing with the owner key.

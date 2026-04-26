@@ -1,6 +1,6 @@
 # SLT 203.2: I Can Build a Transaction That Mints or Burns Tokens Using a Native Script
 
-Every token on Cardano belongs to a **policy** — a set of rules that control who can mint or burn it. The simplest kind of policy is a **native script**: a declarative rule set evaluated by the node, no Plutus VM required. Native scripts support key signatures and time locks.
+Every token on Cardano belongs to a **policy** — rules controlling who can mint or burn it. The simplest policy is a **native script**: a declarative rule set evaluated by the node, with no Plutus VM required.
 
 This lesson walks through minting and burning tokens with a native script using Apollo.
 
@@ -16,11 +16,11 @@ This lesson walks through minting and burning tokens with a native script using 
 
 ## Background
 
-A **policy ID** is the hash of the script that governs a token. Token identity on Cardano is `policyId + assetName`. Once minted under a policy, that binding is permanent.
+A **policy ID** is the hash of the script governing a token. Token identity on Cardano is `policyId + assetName`. Once minted under a policy, that binding is permanent.
 
-A `ScriptPubKey` native script creates a policy that permits minting only when a specific key signs the transaction. The policy ID is derived from the script, which in turn is built from your wallet's payment key hash.
+A `ScriptPubKey` native script creates a policy that permits minting only when a specific key signs the transaction. Unlike a Plutus script — which runs in the Plutus VM and accepts a redeemer — native scripts are stateless rules evaluated directly by the node. No redeemer is needed.
 
-Minted tokens must be assigned to an output in the same transaction — you cannot mint into thin air.
+Minted tokens must be assigned to an output in the same transaction.
 
 ---
 
@@ -81,8 +81,8 @@ func main() {
 		KeyHash: pkh,
 	}
 
-	// Hash() returns (serialization.ScriptHash, error).
-	// ScriptHash is [28]byte, so use [:] to get []byte for hex encoding.
+	// script.Hash() returns (serialization.ScriptHash, error).
+	// ScriptHash is [28]byte — use [:] to get []byte for hex encoding.
 	scriptHash, err := script.Hash()
 	if err != nil {
 		panic(err)
@@ -97,10 +97,11 @@ func main() {
 		panic(err)
 	}
 
+	// MintAssetsWithNativeScript attaches the script and registers the mint in one call.
+	// AddRequiredSignerFromBech32(address, addPaymentPart, addStakingPart)
 	apollob, _, err = apollob.
 		AddLoadedUTxOs(utxos...).
-		MintAssets(mintUnit).
-		AttachNativeScript(script).
+		MintAssetsWithNativeScript(mintUnit, script).
 		AddRequiredSignerFromBech32(
 			apollob.GetWallet().GetAddress().String(),
 			true, false,
@@ -131,21 +132,20 @@ Run it:
 go run .
 ```
 
-Check the transaction on [preprod.cardanoscan.io](https://preprod.cardanoscan.io). Confirm the minting event shows `GimbalToken` quantity `1000000` under your policy ID.
+Check the transaction on [preprod.cardanoscan.io](https://preprod.cardanoscan.io). Confirm the minting event shows `GimbalToken` quantity `1,000,000` under your policy ID.
 
 ---
 
 ## Burning Tokens
 
-Use a negative quantity. The tokens must already exist in a UTxO in `AddLoadedUTxOs`.
+Use a negative quantity. The tokens to burn must already exist in a UTxO in `AddLoadedUTxOs`.
 
 ```go
 burnUnit := apollo.NewUnit(policyId, "GimbalToken", -500_000)
 
 apollob, _, err = apollob.
     AddLoadedUTxOs(utxos...).
-    MintAssets(burnUnit).
-    AttachNativeScript(script).
+    MintAssetsWithNativeScript(burnUnit, script).
     AddRequiredSignerFromBech32(
         apollob.GetWallet().GetAddress().String(),
         true, false,
@@ -163,30 +163,24 @@ if err != nil {
 A time-locked policy forbids minting after a specific slot. Once that slot passes, the policy is frozen — no one can ever mint or burn under it again.
 
 ```go
-expirySlot := int64(10_000_000) // replace with a real future slot number
+expirySlot := int64(10_000_000) // replace with a real future slot
 
-timeLocked := NativeScript.NativeScript{
+timedScript := NativeScript.NativeScript{
     Tag: NativeScript.ScriptAll,
     NativeScripts: []NativeScript.NativeScript{
-        {
-            Tag:     NativeScript.ScriptPubKey,
-            KeyHash: pkh,
-        },
-        {
-            Tag:   NativeScript.InvalidHereafter,
-            After: expirySlot,
-        },
+        {Tag: NativeScript.ScriptPubKey, KeyHash: pkh},
+        {Tag: NativeScript.InvalidHereafter, After: expirySlot},
     },
 }
 
-tlHash, err := timeLocked.Hash()
+tlHash, err := timedScript.Hash()
 if err != nil {
     panic(err)
 }
 timedPolicyId := hex.EncodeToString(tlHash[:])
 ```
 
-Use `timeLocked` in place of `script` in the minting call. The transaction must be submitted before `expirySlot`.
+Use `timedScript` in place of `script`. The transaction must be submitted before `expirySlot`.
 
 ---
 
@@ -197,13 +191,14 @@ Use `timeLocked` in place of `script` in the minting call. The transaction must 
 | `ScriptPubKey` | Policy requires the matching key to sign |
 | `ScriptAll` | All sub-scripts must be satisfied |
 | `InvalidHereafter` | Minting forbidden at or after this slot |
+| `MintAssetsWithNativeScript` | Attaches the native script and registers the mint |
 | Negative quantity | Burns tokens instead of minting |
 
 ---
 
 ## Common Errors
 
-**`tokens not sent to output`** — every minted token must appear in an output. Include `mintUnit` as the third argument to `PayToAddressBech32`.
+**`tokens not sent to output`** — every minted token must appear in a transaction output. Include `mintUnit` as an extra argument to `PayToAddressBech32`.
 
 **`InsufficientFunds`** — outputs carrying native assets require at least ~2 ADA minimum. Use at least `2_000_000` lovelace.
 
@@ -214,9 +209,9 @@ Use `timeLocked` in place of `script` in the minting call. The transaction must 
 ## Summary
 
 - Build a `NativeScript` with your wallet's `PaymentPart` as the `KeyHash`.
-- `script.Hash()` returns `(serialization.ScriptHash, error)` — use `scriptHash[:]` to hex-encode it.
-- `MintAssets(unit)` + `AttachNativeScript(script)` + an output that receives the tokens.
+- `script.Hash()` returns `(serialization.ScriptHash, error)` — use `scriptHash[:]` to hex-encode the policy ID.
+- `MintAssetsWithNativeScript(unit, script)` attaches the script and registers the mint in one call.
 - Burning is identical with a negative quantity.
 - `ScriptAll` + `InvalidHereafter` creates a time-locked policy.
 
-In 203.3 you will mint tokens using a Plutus validator where minting rules are arbitrary on-chain logic.
+In 203.3 you will attach structured data (a datum) to a contract output — the first step toward interacting with the hello_world validator.

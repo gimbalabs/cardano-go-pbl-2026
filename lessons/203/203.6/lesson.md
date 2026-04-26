@@ -1,173 +1,51 @@
-# SLT 203.6: I Can Build a Transaction That Passes Input Data to a Smart Contract Using a Redeemer
+# SLT 203.6: I Can Build a Transaction That Mints or Burns Tokens Using a Validator Script
 
-You have already used redeemers in 203.3 (minting) and 203.4 (spending). This lesson goes deeper: the three common redeemer patterns from a blueprint, and the exact difference in how Apollo accepts them for minting vs spending.
+In 203.2 you minted tokens with a native script — policy controlled by key signatures. Now you step up to a **Plutus validator**, where the minting policy is arbitrary on-chain logic. The key difference: the transaction must supply a **redeemer** that the script evaluates before allowing the mint.
+
+This lesson uses the `hello_world` validator from 203.1. Its `mint` handler checks that the redeemer's `msg` field equals `"HelloMintRedeemer"`.
 
 ---
 
 ## Prerequisites
 
-- Completed 203.1 (blueprint reading), 203.3 (minting redeemers), 203.4 (spending redeemers)
-- A funded preprod wallet and Blockfrost API key
+- Completed 203.1 (reading blueprint types, constructing `PlutusData`)
+- Completed 203.2 (native script minting)
+- Completed 203.5 (redeemer patterns)
+- A compiled `plutus.json` from 203.1 and a funded preprod wallet
 
 ---
 
-## Background: What Is a Redeemer?
+## The Contract
 
-A redeemer is the data your transaction passes to a script at execution time. Unlike a datum — which is set when the UTxO is created — the redeemer is chosen fresh each time you spend or mint.
+The hello_world `mint` handler from 203.1:
 
-Each redeemer in a transaction has four parts:
+```aiken
+mint(
+  redeemer: Redeemer,
+  _policy_id: PolicyId,
+  _self: Transaction,
+) {
+  redeemer.msg == "HelloMintRedeemer"
+}
+```
 
-| Field | Description |
-|-------|-------------|
-| `Tag` | `SPEND`, `MINT`, `CERT`, or `REWARD` — matches the script purpose |
-| `Index` | Position of the input/policy in the sorted transaction |
-| `Data` | The `PlutusData` built from the blueprint |
-| `ExUnits` | Memory and CPU cost — Apollo estimates this when `CollectFrom` or `MintAssetsWithRedeemer` is used |
-
-### API Difference: Minting vs Spending
-
-| Method | Second parameter | Notes |
-|--------|-----------------|-------|
-| `MintAssetsWithRedeemer(unit, data)` | `PlutusData.PlutusData` | Apollo wraps it into a `Redeemer` internally |
-| `CollectFrom(utxo, redeemer)` | `Redeemer.Redeemer` | You construct the full struct with `Tag: Redeemer.SPEND` |
+From the blueprint, `Redeemer` is constructor 0, one `#bytes` field → tag 121. The `hash` field of `"lesson203_1.hello_world.mint"` in `plutus.json` is the policy ID.
 
 ---
 
-## Three Redeemer Patterns
+## Setup
 
-### Pattern 1: Simple record (most common)
-
-```aiken
-pub type Redeemer {
-  msg: ByteArray,
-}
+```bash
+mkdir 203-validator-mint && cd 203-validator-mint
+go mod init 203-validator-mint
+go get github.com/Salvionied/apollo
 ```
 
-Blueprint: constructor 0, one `#bytes` field.
-
-For **minting** (`MintAssetsWithRedeemer`):
-```go
-mintRedeemer := PlutusData.PlutusData{
-    TagNr:  121,
-    HasTag: true,
-    Value: PlutusData.PlutusIndefArray{
-        PlutusData.PlutusData{
-            HasTag: false,
-            Value:  serialization.ByteString{Bytes: []byte("Hello, World!")},
-        },
-    },
-}
-```
-
-For **spending** (`CollectFrom`):
-```go
-spendRedeemer := Redeemer.Redeemer{
-    Tag: Redeemer.SPEND,
-    Data: PlutusData.PlutusData{
-        TagNr:  121,
-        HasTag: true,
-        Value: PlutusData.PlutusIndefArray{
-            PlutusData.PlutusData{
-                HasTag: false,
-                Value:  serialization.ByteString{Bytes: []byte("Hello, World!")},
-            },
-        },
-    },
-    ExUnits: Redeemer.ExecutionUnits{Mem: 0, Steps: 0},
-}
-```
-
-### Pattern 2: Enum (multiple variants)
-
-```aiken
-pub type Action {
-  Mint
-  Burn
-}
-```
-
-Blueprint:
-```json
-"Action": {
-  "anyOf": [
-    { "title": "Mint", "dataType": "constructor", "index": 0, "fields": [] },
-    { "title": "Burn", "dataType": "constructor", "index": 1, "fields": [] }
-  ]
-}
-```
-
-Each variant is a different constructor index with no fields. The tag alone carries the meaning.
-
-```go
-// Mint variant: constructor 0 → tag 121, no fields
-mintAction := PlutusData.PlutusData{
-    TagNr:  121,
-    HasTag: true,
-    Value:  PlutusData.PlutusIndefArray{},
-}
-
-// Burn variant: constructor 1 → tag 122, no fields
-burnAction := PlutusData.PlutusData{
-    TagNr:  122,
-    HasTag: true,
-    Value:  PlutusData.PlutusIndefArray{},
-}
-```
-
-### Pattern 3: Multi-field record
-
-```aiken
-pub type TransferRedeemer {
-  recipient: ByteArray,
-  amount: Int,
-}
-```
-
-Blueprint: constructor 0, fields: `[recipient: #bytes, amount: #integer]`.
-
-```go
-import "math/big"
-
-transfer := PlutusData.PlutusData{
-    TagNr:  121,
-    HasTag: true,
-    Value: PlutusData.PlutusIndefArray{
-        PlutusData.PlutusData{
-            HasTag: false,
-            Value:  serialization.ByteString{Bytes: recipientPkh},
-        },
-        PlutusData.PlutusData{
-            HasTag: false,
-            Value:  *big.NewInt(transferAmount),
-        },
-    },
-}
-```
+Copy your `plutus.json` into this directory.
 
 ---
 
-## Full Example: Enum Redeemer for Controlled Minting
-
-```aiken
-// validators/controlled_mint.ak
-
-pub type MintAction {
-  Mint
-  Burn
-}
-
-validator controlled_mint(owner: ByteArray) {
-  mint(redeemer: MintAction, _policy_id: ByteArray, self: Transaction) {
-    list.has(self.extra_signatories, owner) &&
-    when redeemer is {
-      Mint -> True
-      Burn -> True
-    }
-  }
-}
-```
-
-> This validator takes a parameter (`owner`). Parameterized validators must have the parameter applied before use — the compiled `plutus.json` must contain the version with the owner baked in. Applying parameters is covered in Module 204. For now, compile the validator with a hardcoded owner for testing.
+## Complete Minting Example
 
 ```go
 package main
@@ -181,6 +59,7 @@ import (
 	"github.com/Salvionied/apollo"
 	"github.com/Salvionied/apollo/constants"
 	"github.com/Salvionied/apollo/serialization/PlutusData"
+	"github.com/Salvionied/apollo/serialization/Redeemer"
 	"github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
 )
 
@@ -197,6 +76,9 @@ type Blueprint struct {
 	} `json:"validators"`
 }
 
+// loadScript decodes a validator's compiledCode from plutus.json.
+// compiledCode is hex-encoded CBOR — hex.DecodeString gives the raw bytes Apollo needs.
+// Returns the script and its hash (the policy ID for mint validators).
 func loadScript(path, title string) (PlutusData.PlutusV3Script, string, error) {
 	data, err := os.ReadFile(path)
 	if err != nil {
@@ -218,22 +100,23 @@ func loadScript(path, title string) (PlutusData.PlutusV3Script, string, error) {
 	return nil, "", fmt.Errorf("validator %q not found", title)
 }
 
-// mintActionRedeemer: Mint variant, constructor 0, no fields.
-// Passed directly to MintAssetsWithRedeemer as PlutusData.
-func mintActionRedeemer() PlutusData.PlutusData {
-	return PlutusData.PlutusData{
-		TagNr:  121,
-		HasTag: true,
-		Value:  PlutusData.PlutusIndefArray{},
-	}
-}
-
-// burnActionRedeemer: Burn variant, constructor 1, no fields.
-func burnActionRedeemer() PlutusData.PlutusData {
-	return PlutusData.PlutusData{
-		TagNr:  122,
-		HasTag: true,
-		Value:  PlutusData.PlutusIndefArray{},
+// buildMintRedeemer returns the hello_world mint redeemer.
+// Blueprint: constructor 0, fields: [msg: #bytes] → tag 121
+// MintAssetsWithRedeemer takes Redeemer.Redeemer with Tag: Redeemer.MINT.
+func buildMintRedeemer() Redeemer.Redeemer {
+	return Redeemer.Redeemer{
+		Tag: Redeemer.MINT,
+		Data: PlutusData.PlutusData{
+			PlutusDataType: PlutusData.PlutusArray,
+			TagNr:          121,
+			Value: PlutusData.PlutusIndefArray{
+				PlutusData.PlutusData{
+					PlutusDataType: PlutusData.PlutusBytes,
+					Value:          []byte("HelloMintRedeemer"),
+				},
+			},
+		},
+		ExUnits: Redeemer.ExecutionUnits{Mem: 0, Steps: 0},
 	}
 }
 
@@ -257,7 +140,9 @@ func main() {
 		panic(err)
 	}
 
-	mintScript, policyId, err := loadScript("plutus.json", "controlled_mint.mint")
+	// hash field from plutus.json is the policy ID directly — no derivation needed.
+	// compiledCode → hex.DecodeString → PlutusV3Script(bytes)
+	mintScript, policyId, err := loadScript("plutus.json", "lesson203_1.hello_world.mint")
 	if err != nil {
 		panic(err)
 	}
@@ -268,15 +153,16 @@ func main() {
 		panic(err)
 	}
 
-	mintUnit := apollo.NewUnit(policyId, "ControlledToken", 100)
-	redeemer := mintActionRedeemer() // swap to burnActionRedeemer() + quantity -100 to burn
+	redeemer := buildMintRedeemer()
+	mintUnit := apollo.NewUnit(policyId, "HelloToken", 1_000)
 
+	// MintAssetsWithRedeemer automatically handles ExUnit estimation.
+	// AttachV3Script adds the compiled script bytes to the transaction witness set.
 	apollob, _, err = apollob.
 		AddLoadedUTxOs(utxos...).
 		AttachV3Script(mintScript).
 		MintAssetsWithRedeemer(mintUnit, redeemer).
 		PayToAddressBech32(apollob.GetWallet().GetAddress().String(), 2_000_000, mintUnit).
-		AddRequiredSignerFromBech32(apollob.GetWallet().GetAddress().String(), true, false).
 		Complete()
 	if err != nil {
 		panic(err)
@@ -292,33 +178,66 @@ func main() {
 }
 ```
 
-To burn: replace `mintActionRedeemer()` with `burnActionRedeemer()` and use a negative quantity:
+Run it:
 
-```go
-mintUnit := apollo.NewUnit(policyId, "ControlledToken", -100)
-redeemer := burnActionRedeemer()
+```bash
+go run .
 ```
+
+Check [preprod.cardanoscan.io](https://preprod.cardanoscan.io). The policy ID should match the printed hash. Quantity: 1,000 `HelloToken`.
 
 ---
 
-## Redeemer Tag Reference
+## Burning Tokens
 
-| Script purpose | Apollo constant | Used with |
-|---------------|----------------|-----------|
-| Spending a UTxO | `Redeemer.SPEND` | `CollectFrom` |
-| Minting / burning | `Redeemer.MINT` | Set internally by `MintAssetsWithRedeemer` |
+Use a negative quantity with the same redeemer and script:
+
+```go
+burnUnit := apollo.NewUnit(policyId, "HelloToken", -500)
+
+apollob, _, err = apollob.
+    AddLoadedUTxOs(utxos...).
+    AttachV3Script(mintScript).
+    MintAssetsWithRedeemer(burnUnit, redeemer).
+    Complete()
+```
+
+The tokens to burn must be present in a UTxO in `AddLoadedUTxOs`.
+
+---
+
+## How compiledCode Flows to the Transaction
+
+1. Aiken compiles the validator to flat-encoded Plutus Core
+2. `aiken build` wraps it in CBOR and hex-encodes it → `compiledCode` in `plutus.json`
+3. `hex.DecodeString(compiledCode)` → raw CBOR bytes
+4. `PlutusData.PlutusV3Script(bytes)` → typed script value
+5. `AttachV3Script(script)` → added to the transaction witness set
+6. Ledger executes it with the redeemer you supplied
+
+---
+
+## Native Script vs Validator Script
+
+| | Native Script (203.2) | Validator Script (203.6) |
+|---|---|---|
+| Policy enforced by | Key signatures / time locks | Arbitrary on-chain Aiken logic |
+| Redeemer required | No | Yes — `PlutusData` |
+| Script attached via | Built into `MintAssetsWithNativeScript` | `AttachV3Script` |
+| Apollo mint method | `MintAssetsWithNativeScript` | `MintAssetsWithRedeemer` |
+| Policy ID source | `script.Hash()` derived from key | `hash` field in `plutus.json` |
 
 ---
 
 ## Common Errors
 
-**`Wrong constructor index for enum variant`** — `Mint` is index 0 (tag 121) and `Burn` is index 1 (tag 122). Swapping them compiles fine but fails the on-chain pattern match.
+**`Script not found in witness set`** — `AttachV3Script` must be called before `Complete()`. Without it, the ledger cannot execute the minting policy.
 
-**`Passing Redeemer.Redeemer to MintAssetsWithRedeemer`** — that method takes `PlutusData.PlutusData`. Pass the data directly; Apollo wraps it internally.
+**`Redeemer data mismatch`** — the `msg` bytes must exactly match what the validator checks. `"HelloMintRedeemer"` and `"HelloMintRedeemer "` (trailing space) are different byte sequences.
 
-**`Passing PlutusData.PlutusData to CollectFrom`** — that method takes `Redeemer.Redeemer`. Wrap your PlutusData with `Redeemer.Redeemer{Tag: Redeemer.SPEND, Data: ..., ExUnits: ...}`.
+**`Wrong script version`** — if `plutus.json` says `"plutusVersion": "v3"` use `PlutusV3Script` / `AttachV3Script`. For `v2` use `PlutusV2Script` / `AttachV2Script`.
 
-**`Parameterized validator hash mismatch`** — the policy ID is the hash of the script *after* the parameter is applied. A different parameter value gives a different policy ID. See Module 204.
+**`tokens not sent to output`** — minted tokens must appear in a transaction output. Include `mintUnit` as an extra argument to `PayToAddressBech32`.
 
 ---
 
@@ -326,11 +245,11 @@ redeemer := burnActionRedeemer()
 
 | Lesson | What you built |
 |--------|---------------|
-| 203.1 | Read Aiken types from a blueprint and reproduce them as `PlutusData` in Go |
-| 203.2 | Mint/burn tokens with a native script |
-| 203.3 | Mint/burn tokens with a Plutus validator and redeemer |
-| 203.4 | Lock funds at a script address and unlock them with a redeemer |
-| 203.5 | Attach structured data (datums) to any output |
-| 203.6 | Construct redeemers for simple records, enums, and multi-field types |
+| 203.1 | Read Aiken types from a blueprint; reproduce them as `PlutusData` in Go |
+| 203.2 | Mint and burn tokens with a native script (`MintAssetsWithNativeScript`) |
+| 203.3 | Lock funds at a script address with an inline datum (`PayToContract`) |
+| 203.4 | Unlock those funds with a spend redeemer and required signer (`CollectFrom`) |
+| 203.5 | Understand redeemer patterns: simple records, enums, multi-field types |
+| 203.6 | Mint and burn tokens with a Plutus validator (`MintAssetsWithRedeemer`) |
 
-The pattern throughout: read the blueprint, build `PlutusData` that matches it exactly, wire it into Apollo with the right method, and let `Complete()` handle fee estimation and coin selection.
+The pattern throughout: read the blueprint → build matching `PlutusData` → wire into Apollo with the correct method → `Complete()` handles fee estimation and coin selection.

@@ -28,11 +28,12 @@ The `plutus.json` blueprint ([CIP-57](https://cips.cardano.org/cip/CIP-57)) is t
 
 ## The Example Contract: Hello World
 
-```aiken
-// validators/hello_world.ak
+we would continue to use this aiken code till the end of this module
 
+```aiken
 use aiken/collection/list
 use aiken/crypto.{VerificationKeyHash}
+use cardano/assets.{PolicyId}
 use cardano/transaction.{OutputReference, Transaction}
 
 pub type Datum {
@@ -51,65 +52,132 @@ validator hello_world {
     self: Transaction,
   ) {
     expect Some(Datum { owner }) = datum
-    let must_say_hello = redeemer.msg == "Hello, World!"
+    let must_say_hello = redeemer.msg == "HelloSpendRedeemer"
     let must_be_signed = list.has(self.extra_signatories, owner)
     must_say_hello? && must_be_signed?
   }
+
+  mint(
+    redeemer: Redeemer,
+    _policy_id: PolicyId,
+    _self: Transaction,
+  ) {
+    redeemer.msg == "HelloMintRedeemer"
+  }
+
+  else(_) {
+    fail
+  }
 }
+
 ```
 
 - **`Datum`** — one field: `owner`, a 28-byte public key hash
 - **`Redeemer`** — one field: `msg`, a byte array
 
-The contract unlocks funds only when the transaction is signed by `owner` AND the redeemer message is `"Hello, World!"`.
+The spend handler unlocks funds when the transaction is signed by `owner` (from the datum) and the redeemer `msg` is `"HelloSpendRedeemer"`. The mint handler allows minting when the redeemer `msg` is `"HelloMintRedeemer"`.
 
 ---
 
 ## Layer 1 → Layer 2: Aiken to Blueprint
 
-Running `aiken build` produces `plutus.json`. Here is the relevant excerpt:
+Running `aiken build` produces `plutus.json`. Here is the exact output:
 
 ```json
+
 {
   "preamble": {
-    "title": "hello-world",
+    "title": "emmanuel/lesson203_3",
+    "description": "Aiken contracts for project 'emmanuel/lesson203_3'",
     "version": "0.0.0",
-    "plutusVersion": "v3"
+    "plutusVersion": "v3",
+    "compiler": {
+      "name": "Aiken",
+      "version": "v1.1.21+unknown"
+    },
+    "license": "Apache-2.0"
   },
   "validators": [
     {
-      "title": "hello_world.spend",
+      "title": "lesson203_1.hello_world.spend",
       "datum": {
         "title": "datum",
-        "schema": { "$ref": "#/definitions/hello_world~1Datum" }
+        "schema": {
+          "$ref": "#/definitions/lesson203_1~1Datum"
+        }
       },
       "redeemer": {
         "title": "redeemer",
-        "schema": { "$ref": "#/definitions/hello_world~1Redeemer" }
+        "schema": {
+          "$ref": "#/definitions/lesson203_1~1Redeemer"
+        }
       },
-      "compiledCode": "5901...",
-      "hash": "abc123..."
+      "compiledCode": "59015201010029800aba2aba1aab9faab9eaab9dab9a488888966002664464653001300637540032259800980298041baa002899192cc004c03800a0071640306eb8c030004c024dd50014590074c024012601200491112cc004cdc3a4004009132332233006004159800980518069baa0018acc004cdc79bae3010300e375400891011248656c6c6f5370656e6452656465656d657200899199119801001000912cc00400629422b30013371e6eb8c04c00400e2946266004004602800280790121bac301130123012301230123012301230123012300f375400c6eb8c040c038dd5180818071baa0018a504031164030601c002601c601e00260166ea80162b3001300700489919802001099b8f375c601c60186ea800922011148656c6c6f4d696e7452656465656d657200375c601a60166ea80162c80490090c020c024004c020008c00cdd50039b874800229344d95900101",
+      "hash": "837ff340bc109fd82aa73724d0f8234cf84a7da1cfa84f0378b74f89"
+    },
+    {
+      "title": "lesson203_1.hello_world.mint",
+      "redeemer": {
+        "title": "redeemer",
+        "schema": {
+          "$ref": "#/definitions/lesson203_1~1Redeemer"
+        }
+      },
+      "compiledCode": "59015201010029800aba2aba1aab9faab9eaab9dab9a488888966002664464653001300637540032259800980298041baa002899192cc004c03800a0071640306eb8c030004c024dd50014590074c024012601200491112cc004cdc3a4004009132332233006004159800980518069baa0018acc004cdc79bae3010300e375400891011248656c6c6f5370656e6452656465656d657200899199119801001000912cc00400629422b30013371e6eb8c04c00400e2946266004004602800280790121bac301130123012301230123012301230123012300f375400c6eb8c040c038dd5180818071baa0018a504031164030601c002601c601e00260166ea80162b3001300700489919802001099b8f375c601c60186ea800922011148656c6c6f4d696e7452656465656d657200375c601a60166ea80162c80490090c020c024004c020008c00cdd50039b874800229344d95900101",
+      "hash": "837ff340bc109fd82aa73724d0f8234cf84a7da1cfa84f0378b74f89"
+    },
+    {
+      "title": "lesson203_1.hello_world.else",
+      "redeemer": {
+        "schema": {}
+      },
+      "compiledCode": "59015201010029800aba2aba1aab9faab9eaab9dab9a488888966002664464653001300637540032259800980298041baa002899192cc004c03800a0071640306eb8c030004c024dd50014590074c024012601200491112cc004cdc3a4004009132332233006004159800980518069baa0018acc004cdc79bae3010300e375400891011248656c6c6f5370656e6452656465656d657200899199119801001000912cc00400629422b30013371e6eb8c04c00400e2946266004004602800280790121bac301130123012301230123012301230123012300f375400c6eb8c040c038dd5180818071baa0018a504031164030601c002601c601e00260166ea80162b3001300700489919802001099b8f375c601c60186ea800922011148656c6c6f4d696e7452656465656d657200375c601a60166ea80162c80490090c020c024004c020008c00cdd50039b874800229344d95900101",
+      "hash": "837ff340bc109fd82aa73724d0f8234cf84a7da1cfa84f0378b74f89"
     }
   ],
   "definitions": {
-    "hello_world/Datum": {
+    "ByteArray": {
+      "dataType": "bytes"
+    },
+    "aiken/crypto/VerificationKeyHash": {
+      "title": "VerificationKeyHash",
+      "dataType": "bytes"
+    },
+    "lesson203_1/Datum": {
       "title": "Datum",
-      "dataType": "constructor",
-      "index": 0,
-      "fields": [
-        { "title": "owner", "dataType": "#bytes" }
+      "anyOf": [
+        {
+          "title": "Datum",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "owner",
+              "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+            }
+          ]
+        }
       ]
     },
-    "hello_world/Redeemer": {
+    "lesson203_1/Redeemer": {
       "title": "Redeemer",
-      "dataType": "constructor",
-      "index": 0,
-      "fields": [
-        { "title": "msg", "dataType": "#bytes" }
+      "anyOf": [
+        {
+          "title": "Redeemer",
+          "dataType": "constructor",
+          "index": 0,
+          "fields": [
+            {
+              "title": "msg",
+              "$ref": "#/definitions/ByteArray"
+            }
+          ]
+        }
       ]
     }
   }
 }
+
 ```
 
 ### Reading the Blueprint
@@ -117,10 +185,13 @@ Running `aiken build` produces `plutus.json`. Here is the relevant excerpt:
 | Field | Meaning |
 |-------|---------|
 | `validators[].title` | Fully qualified validator name (e.g. `hello_world.spend`). Use Ctrl+F to find it. |
-| `datum.schema` / `redeemer.schema` | Reference into `definitions` for the type shape. |
+| `validator[].datum.schema` | Reference into `definitions` for the type shape, use cmd + click or ctrl + click to quickly access the datum definitions  |
+| `validator[].redeemer.schema` | AReference into `definitions` for the type shape. use cmd + click or ctrl + click to quickly access the datum definitions |
 | `compiledCode` | Hex-encoded CBOR script — the actual on-chain code. |
 | `hash` | Script hash. For spending validators: forms the script address. For minting validators: the policy ID. |
 | `definitions` | All type definitions used by datums and redeemers. |
+
+NOTE: In the case of parameterized validators, neither the compiled code nor its script hash is considered final until the parameters are fully applied. you would learn this in next Module lesson 204.2
 
 ### Understanding Type Definitions
 
@@ -129,7 +200,7 @@ Running `aiken build` produces `plutus.json`. Here is the relevant excerpt:
 | `"dataType": "constructor"` | A record type. Encodes as a Plutus `Constr` (CBOR-tagged structure). |
 | `"index": 0` | Constructor variant. Single-variant types are always `0`. |
 | `"fields": [...]` | Ordered list of fields. **Order must match exactly.** |
-| `"#bytes"` | Byte array → `serialization.ByteString{Bytes: []byte{...}}` |
+| `"#bytes"` | Byte array → `PlutusData{PlutusDataType: PlutusBytes, Value: []byte{...}}` |
 | `"#integer"` | Integer → `*big.NewInt(n)` from `math/big` |
 
 ---
@@ -154,20 +225,20 @@ package main
 import (
     "fmt"
 
-    "github.com/Salvionied/apollo/serialization"
     "github.com/Salvionied/apollo/serialization/PlutusData"
 )
 
 // BuildDatum constructs the Datum for hello_world.
 // Blueprint: hello_world/Datum — constructor 0, fields: [owner: #bytes]
+// PlutusArray = tagged constructor; PlutusBytes = raw byte field.
 func BuildDatum(owner []byte) PlutusData.PlutusData {
     return PlutusData.PlutusData{
-        TagNr:  121,
-        HasTag: true,
+        PlutusDataType: PlutusData.PlutusArray,
+        TagNr:          121,
         Value: PlutusData.PlutusIndefArray{
             PlutusData.PlutusData{
-                HasTag: false,
-                Value:  serialization.ByteString{Bytes: owner},
+                PlutusDataType: PlutusData.PlutusBytes,
+                Value:          owner,
             },
         },
     }
@@ -175,15 +246,15 @@ func BuildDatum(owner []byte) PlutusData.PlutusData {
 
 // BuildRedeemer constructs the Redeemer for hello_world.
 // Blueprint: hello_world/Redeemer — constructor 0, fields: [msg: #bytes]
-// msg must be []byte("Hello, World!") to satisfy the contract.
+// msg must be []byte("HelloSpendRedeemer") to satisfy the spend handler.
 func BuildRedeemer(msg []byte) PlutusData.PlutusData {
     return PlutusData.PlutusData{
-        TagNr:  121,
-        HasTag: true,
+        PlutusDataType: PlutusData.PlutusArray,
+        TagNr:          121,
         Value: PlutusData.PlutusIndefArray{
             PlutusData.PlutusData{
-                HasTag: false,
-                Value:  serialization.ByteString{Bytes: msg},
+                PlutusDataType: PlutusData.PlutusBytes,
+                Value:          msg,
             },
         },
     }
@@ -192,7 +263,7 @@ func BuildRedeemer(msg []byte) PlutusData.PlutusData {
 func main() {
     ownerPkh := make([]byte, 28) // replace with real 28-byte payment key hash
     datum := BuildDatum(ownerPkh)
-    redeemer := BuildRedeemer([]byte("Hello, World!"))
+    redeemer := BuildRedeemer([]byte("HelloSpendRedeemer"))
 
     fmt.Printf("Datum TagNr: %d\n", datum.TagNr)
     fmt.Printf("Redeemer TagNr: %d\n", redeemer.TagNr)
@@ -207,12 +278,14 @@ func main() {
 Aiken source             Blueprint (plutus.json)           Go (Apollo)
 ──────────────────       ──────────────────────────        ─────────────────────
 pub type Datum {    →    "dataType": "constructor"   →    PlutusData{
-  owner:                 "index": 0                         TagNr: 121,
-    VerificationKeyHash  "fields": [{                       Value: PlutusIndefArray{
-}                          "dataType": "#bytes"               PlutusData{
-                         }]                                    Value: ByteString{...},
-                                                            },
-                                                          }}
+  owner:                 "index": 0                         PlutusDataType: PlutusArray,
+    VerificationKeyHash  "fields": [{                       TagNr: 121,
+}                          "dataType": "#bytes"             Value: PlutusIndefArray{
+                         }]                                   PlutusData{
+                                                               PlutusDataType: PlutusBytes,
+                                                               Value: owner,
+                                                             },
+                                                           }}
 ```
 
 ---
@@ -234,7 +307,7 @@ pub type Datum {    →    "dataType": "constructor"   →    PlutusData{
 
 **Wrong field order** — Plutus constructors are positional. Your `PlutusIndefArray` must match the blueprint's `fields` array order exactly.
 
-**String vs bytes** — `"Hello, World!"` must be passed as `[]byte("Hello, World!")`. The blueprint type is `#bytes`, not a string.
+**String vs bytes** — `"HelloSpendRedeemer"` must be passed as `[]byte("HelloSpendRedeemer")`. The blueprint type is `#bytes`, not a string. A Go string and a byte slice serialize differently in CBOR.
 
 ---
 
@@ -245,4 +318,4 @@ pub type Datum {    →    "dataType": "constructor"   →    PlutusData{
 - In Go: `PlutusData` with tag `121 + index` and a `PlutusIndefArray` of fields in exact order.
 - `compiledCode` is what runs on-chain. `hash` is the validator's identity (script address or policy ID).
 
-In 203.2 you will use these types to mint tokens with a native script.
+In 203.2 you will mint tokens with a native script. In 203.3–203.6 you will use these exact `PlutusData` structures to interact with the hello_world validator — locking, unlocking, and minting.
