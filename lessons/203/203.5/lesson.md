@@ -1,152 +1,155 @@
 # SLT 203.5: I Can Build a Transaction That Attaches Data to a New Output on the Blockchain
 
-Every UTxO on Cardano can carry a piece of data called a **datum**. In 203.4 you used datums as a contract mechanism — locking funds so a validator could check them when spending. But datums have a broader use: they let any output carry structured, queryable data that anyone can read from the chain.
+Every UTxO on Cardano can carry a **datum** — structured data stored alongside the value. In 203.4 you used datums as a contract mechanism: the validator read the datum to decide whether to release funds. But datums have a broader use: any output at any address can carry on-chain data that contracts or off-chain indexers can read.
 
-This lesson focuses on that broader use — attaching datums to outputs both with and without a contract address.
+This lesson covers both patterns: a datum in the transaction witness set (attached to a regular output) and an inline datum stored directly in a UTxO.
 
 ---
 
 ## Prerequisites
 
-- Completed 203.1 (PlutusData construction from blueprints)
-- Completed 203.4 (basic PayToContract usage)
-- A funded preprod wallet
+- Completed 203.1 (`PlutusData` construction from blueprints)
+- Completed 203.4 (basic `PayToContract` usage)
+- A funded preprod wallet and Blockfrost API key
 
 ---
 
-## Background: Two Ways to Store a Datum
-
-Cardano supports two datum storage strategies, set when you create the output:
+## Background: Two Datum Storage Strategies
 
 | Strategy | How it works | When to use |
 |----------|-------------|-------------|
-| **Inline datum** | Datum bytes stored directly in the UTxO output | Default choice — readable by scripts and off-chain tools without extra lookup |
-| **Hash datum** | Only the datum hash stored in the output; full datum in the tx witness set | Legacy pattern — the spender must already know the datum to reconstruct it |
+| **Inline datum** | Datum bytes stored in the UTxO output itself | Default. Scripts and indexers can read it without extra lookup. |
+| **Witness set datum** | Full datum in the transaction witness set; only hash in the output | Legacy pattern. Datum is available only for that transaction, not in UTxO state. |
 
-Apollo's `PayToContract` accepts a boolean `isInline` flag that controls this. For all modern contracts you should use inline datums.
-
----
-
-## Use Cases for Datum-Carrying Outputs
-
-Datums are not only for smart contracts. Common patterns include:
-
-- **State outputs** — a contract's current state (counter, price, configuration) stored in the datum of a UTxO it controls
-- **Oracle data** — an oracle service posts price data as a datum on a UTxO; other contracts reference it
-- **NFT metadata** — project-specific metadata stored on-chain in a datum alongside the token
-
-In this lesson you'll build both: a plain annotated output (data attached to a regular address) and a contract state output (data attached to a script address).
+`PayToContract(address, &datum, lovelace, isInline)` controls this via the last argument. Use `true` for inline.
 
 ---
 
-## Example 1: Datum on a Regular Address Output
+## PlutusData Integer Fields
 
-A datum can be attached to any output, not just script addresses. This is useful for posting data on-chain that other contracts or off-chain indexers can read.
+Integer fields in a blueprint (`"dataType": "#integer"`) are stored in `PlutusData.Value` as `big.Int`. Import `math/big` and use `*big.NewInt(n)`:
+
+```go
+import "math/big"
+
+PlutusData.PlutusData{
+    HasTag: false,
+    Value:  *big.NewInt(2350),
+}
+```
+
+---
+
+## Setup
+
+```bash
+mkdir 203-datums && cd 203-datums
+go mod init 203-datums
+go get github.com/Salvionied/apollo
+```
+
+---
+
+## Example 1: Datum Attached to a Regular Address Output
+
+You can attach a datum to any output, including your own wallet address. The datum travels in the transaction witness set — it is visible on-chain for that transaction but is **not** stored in the UTxO itself.
 
 ```go
 package main
 
 import (
-    "encoding/hex"
-    "fmt"
+	"encoding/hex"
+	"fmt"
+	"math/big"
 
-    "github.com/fxamacker/cbor/v2"
-    "github.com/Salvionied/apollo"
-    "github.com/Salvionied/apollo/serialization"
-    "github.com/Salvionied/apollo/serialization/PlutusData"
-    "github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
-    "github.com/Salvionied/apollo/constants"
+	"github.com/Salvionied/apollo"
+	"github.com/Salvionied/apollo/constants"
+	"github.com/Salvionied/apollo/serialization"
+	"github.com/Salvionied/apollo/serialization/PlutusData"
+	"github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
 )
 
-// A simple on-chain record: { label: ByteArray, value: Int }
-// Blueprint equivalent:
-//   dataType: constructor, index: 0
-//   fields: [{ dataType: "#bytes" }, { dataType: "#integer" }]
+const (
+	BLOCKFROST_KEY   = "preprodYOUR_KEY_HERE"
+	MNEMONIC         = "word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12"
+	RECEIVER_ADDRESS = "addr_test1YOUR_RECEIVER_ADDRESS"
+)
+
+// buildRecord constructs a datum: { label: ByteArray, value: Int }
+// Blueprint equivalent: constructor 0, fields: [#bytes, #integer]
+// Integer fields use big.Int — import "math/big" and use *big.NewInt(n).
 func buildRecord(label []byte, value int64) PlutusData.PlutusData {
-    return PlutusData.PlutusData{
-        TagNr:  121, // constructor 0
-        HasTag: true,
-        Value: PlutusData.PlutusIndefArray{
-            PlutusData.PlutusData{
-                HasTag: false,
-                Value:  serialization.ByteString{Bytes: label},
-            },
-            PlutusData.PlutusData{
-                HasTag: false,
-                Value:  serialization.BigNum(value), // integer field
-            },
-        },
-    }
+	return PlutusData.PlutusData{
+		TagNr:  121,
+		HasTag: true,
+		Value: PlutusData.PlutusIndefArray{
+			PlutusData.PlutusData{
+				HasTag: false,
+				Value:  serialization.ByteString{Bytes: label},
+			},
+			PlutusData.PlutusData{
+				HasTag: false,
+				Value:  *big.NewInt(value),
+			},
+		},
+	}
 }
 
 func main() {
-    bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
-        constants.BLOCKFROST_BASE_URL_PREPROD,
-        int(constants.PREPROD),
-        "preprodYOUR_BLOCKFROST_KEY",
-    )
-    if err != nil {
-        panic(err)
-    }
+	bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
+		constants.BLOCKFROST_BASE_URL_PREPROD,
+		int(constants.PREPROD),
+		BLOCKFROST_KEY,
+	)
+	if err != nil {
+		panic(err)
+	}
 
-    cc := apollo.NewEmptyBackend()
-    apollob := apollo.New(&cc)
-    SEED := "your mnemonic here"
-    apollob, err = apollob.SetWalletFromMnemonic(SEED, constants.PREPROD)
-    if err != nil {
-        panic(err)
-    }
-    apollob, err = apollob.SetWalletAsChangeAddress()
-    if err != nil {
-        panic(err)
-    }
+	apollob := apollo.New(&bfc)
+	apollob, err = apollob.SetWalletFromMnemonic(MNEMONIC, constants.PREPROD)
+	if err != nil {
+		panic(err)
+	}
+	apollob, err = apollob.SetWalletAsChangeAddress()
+	if err != nil {
+		panic(err)
+	}
 
-    utxos, err := bfc.Utxos(*apollob.GetWallet().GetAddress())
-    if err != nil {
-        panic(err)
-    }
+	utxos, err := bfc.Utxos(*apollob.GetWallet().GetAddress())
+	if err != nil {
+		panic(err)
+	}
 
-    // Build a datum carrying some structured data
-    datum := buildRecord([]byte("temperature"), 2350) // e.g. 23.50°C × 100
+	datum := buildRecord([]byte("temperature"), 2350) // represents 23.50°C × 100
 
-    // AttachDatum adds the datum to the transaction witness set.
-    // PayToAddressBech32 does not automatically attach datums — you must do it explicitly
-    // when sending to a non-contract address.
-    apollob, err = apollob.
-        AddLoadedUTxOs(utxos...).
-        AttachDatum(&datum).
-        PayToAddressBech32("addr_test1...RECEIVER_ADDRESS", 2_000_000).
-        Complete()
-    if err != nil {
-        panic(err)
-    }
+	apollob, _, err = apollob.
+		AddLoadedUTxOs(utxos...).
+		AttachDatum(&datum).
+		PayToAddressBech32(RECEIVER_ADDRESS, 2_000_000).
+		Complete()
+	if err != nil {
+		panic(err)
+	}
 
-    apollob = apollob.Sign()
-    tx := apollob.GetTx()
+	apollob = apollob.Sign()
+	txId, err := apollob.Submit()
+	if err != nil {
+		panic(err)
+	}
 
-    cborred, err := cbor.Marshal(tx)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println("CBOR tx:", hex.EncodeToString(cborred))
-
-    txId, err := bfc.SubmitTx(*tx)
-    if err != nil {
-        panic(err)
-    }
-    fmt.Println("Tx hash:", hex.EncodeToString(txId.Payload))
+	fmt.Println("Tx hash:", hex.EncodeToString(txId.Payload))
 }
 ```
 
-> **Note on `AttachDatum` vs inline:** `AttachDatum` puts the datum in the **transaction witness set** — it's available on-chain for that transaction but not stored in the UTxO itself. To store the datum inside the UTxO (so it can be read later without the original transaction), use `PayToContract` with `isInline: true`.
+After confirming, open the transaction on the explorer and inspect the datum tab on the output — you will see the CBOR-encoded record.
 
 ---
 
-## Example 2: Inline Datum on a Script Address (Contract State)
+## Example 2: Inline Datum on a Script Address
 
-This is the pattern from 203.4 but now with a focus on the datum itself — a more complex multi-field type.
+This extends the lock pattern from 203.4 with a multi-field datum to show how field order matters.
 
-Imagine a contract that tracks a simple counter. The Aiken type would be:
+Aiken type:
 
 ```aiken
 pub type CounterDatum {
@@ -167,44 +170,44 @@ Blueprint:
 }
 ```
 
-Note the field order: `count` first, `owner` second. Your Go code must match this exactly.
+Field order: `count` first, `owner` second. Your Go code must match this exactly.
 
 ```go
-// BuildCounterDatum constructs the CounterDatum.
-// Blueprint: constructor 0, fields: [count: #integer, owner: #bytes]
-// Field order is positional — count must come before owner.
+import "math/big"
+
+// buildCounterDatum: constructor 0, fields: [count: #integer, owner: #bytes]
+// count must come before owner — field order is positional, not named.
 func buildCounterDatum(count int64, owner []byte) PlutusData.PlutusData {
-    return PlutusData.PlutusData{
-        TagNr:  121,
-        HasTag: true,
-        Value: PlutusData.PlutusIndefArray{
-            // Field 0: count (integer)
-            PlutusData.PlutusData{
-                HasTag: false,
-                Value:  serialization.BigNum(count),
-            },
-            // Field 1: owner (bytes)
-            PlutusData.PlutusData{
-                HasTag: false,
-                Value:  serialization.ByteString{Bytes: owner},
-            },
-        },
-    }
+	return PlutusData.PlutusData{
+		TagNr:  121,
+		HasTag: true,
+		Value: PlutusData.PlutusIndefArray{
+			PlutusData.PlutusData{
+				HasTag: false,
+				Value:  *big.NewInt(count),
+			},
+			PlutusData.PlutusData{
+				HasTag: false,
+				Value:  serialization.ByteString{Bytes: owner},
+			},
+		},
+	}
 }
 ```
 
-Sending to the contract with an inline datum:
+Sending to a script address with an inline datum:
 
 ```go
+walletPkh := apollob.GetWallet().GetAddress().PaymentPart // []byte
 datum := buildCounterDatum(0, walletPkh)
 
-apollob, err = apollob.
+apollob, _, err = apollob.
     AddLoadedUTxOs(utxos...).
     PayToContract(
-        contractAddress, // Address.Address of the script
+        contractAddress, // Address.Address — built with Address.AddressFromBytes(...)
         &datum,
-        3_000_000, // lovelace
-        true,      // isInline = true: datum stored in the UTxO
+        3_000_000,
+        true, // isInline: datum stored in the UTxO, not just the witness set
     ).
     Complete()
 ```
@@ -213,62 +216,31 @@ apollob, err = apollob.
 
 ## Datum Field Types: Quick Reference
 
-| Aiken type | Blueprint `dataType` | Go value |
-|-----------|----------------------|----------|
+| Aiken type | Blueprint `dataType` | Go value in `PlutusData.Value` |
+|-----------|----------------------|--------------------------------|
 | `ByteArray` | `"#bytes"` | `serialization.ByteString{Bytes: []byte{...}}` |
-| `Int` | `"#integer"` | `serialization.BigNum(n)` |
+| `Int` | `"#integer"` | `*big.NewInt(n)` from `math/big` |
 | `Bool` (True) | `constructor, index: 1` | `PlutusData{TagNr: 122, HasTag: true, Value: PlutusIndefArray{}}` |
 | `Bool` (False) | `constructor, index: 0` | `PlutusData{TagNr: 121, HasTag: true, Value: PlutusIndefArray{}}` |
-| Nested record | `constructor, index: N` | Nested `PlutusData` with its own `TagNr` and `Value` |
-
----
-
-## Step-by-Step Build
-
-### Step 0: Setup
-
-```bash
-mkdir 203_5-datums && cd 203_5-datums
-go mod init 203_5-datums
-go get github.com/Salvionied/apollo
-```
-
-### Step 1: Build and run Example 1
-
-Run the regular-address datum transaction. View it on the explorer and inspect the **datum** tab on the output — you should see your CBOR-encoded data.
-
-### Step 2: Decode what you see
-
-The explorer will show raw CBOR. Decode it mentally or with a CBOR tool:
-
-```
-d87980   → constructor 0, empty fields
-d8799f   → constructor 0, indefinite array follows
-```
-
-Match what you see to what you built.
-
-### Step 3: Build Example 2
-
-Swap in a script address and use `PayToContract` with `isInline: true`. Verify the datum appears directly on the UTxO in the explorer (not just in the witness set).
+| Nested record | `constructor, index: N` | Nested `PlutusData` with its own `TagNr` and `PlutusIndefArray` |
 
 ---
 
 ## Common Errors
 
-**`Datum not visible on output`** — if you used `AttachDatum` instead of `PayToContract(..., true)`, the datum is in the witness set of that transaction but not stored on the UTxO. Future transactions cannot read it from the chain state.
+**`Datum not visible on UTxO`** — `AttachDatum` puts the datum in the witness set of the current transaction only. It is not stored in the UTxO. Use `PayToContract(..., true)` to store it in the UTxO state.
 
-**`Wrong field order`** — if your blueprint lists `count` before `owner`, reversing them in Go will produce a valid CBOR value but the wrong one. The script will decode it and read `count` as bytes and `owner` as an integer, which will fail type checks inside the validator.
+**`Wrong field order`** — `PlutusIndefArray` is positional. Swapping `count` and `owner` in Go produces valid CBOR but the wrong data. The validator decodes them by position — it will read `count` as bytes and `owner` as an integer and fail.
 
-**`BigNum vs ByteString confusion`** — `#integer` fields must use `serialization.BigNum`, not `ByteString`. Passing bytes where an integer is expected produces a CBOR type mismatch that the script will reject.
+**`Value: big.Int vs ByteString confusion`** — `#integer` fields must use `*big.NewInt(n)`. Passing `ByteString` where an integer is expected produces a CBOR type mismatch.
 
 ---
 
 ## Summary
 
-- Any Cardano output can carry a datum — not only script addresses.
-- `isInline: true` stores the datum in the UTxO itself (preferred). `AttachDatum` adds it to the witness set of the current transaction only.
+- Any Cardano output can carry a datum, not only script addresses.
+- `isInline: true` stores the datum in the UTxO (preferred). `AttachDatum` adds it to the current transaction's witness set only.
 - Field order in `PlutusIndefArray` must exactly match the blueprint's `fields` array.
-- Use `serialization.BigNum` for `#integer` fields and `serialization.ByteString` for `#bytes` fields.
+- `#integer` fields use `*big.NewInt(n)` from `math/big`. `#bytes` fields use `serialization.ByteString{Bytes: ...}`.
 
-In 203.6 you'll pass a redeemer into a smart contract — the other side of the datum/redeemer pair.
+In 203.6 you will look at redeemers in more depth — enum types and multi-field redeemers.

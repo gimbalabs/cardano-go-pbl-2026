@@ -1,276 +1,222 @@
-# Lesson 203.2 — Minting & Burning Tokens with Native Scripts
+# SLT 203.2: I Can Build a Transaction That Mints or Burns Tokens Using a Native Script
 
-**Course:** Cardano Go PBL 2026  
-**Module:** 203 — Applications & Smart Contracts  
+Every token on Cardano belongs to a **policy** — a set of rules that control who can mint or burn it. The simplest kind of policy is a **native script**: a declarative rule set evaluated by the node, no Plutus VM required. Native scripts support key signatures and time locks.
 
----
-
-## 🎯 Learning Outcome
-
-> I can build a transaction that mints or burns tokens using a native script (no smart contract required).
+This lesson walks through minting and burning tokens with a native script using Apollo.
 
 ---
 
-## 01 — Background: What Is a Native Script?
+## Prerequisites
 
-On Cardano, every token belongs to a **policy**. A policy defines:
-
-- Who can mint or burn tokens  
-- Under what conditions  
-
-### Types of Minting Policies
-
-| Type | Description |
-|------|------------|
-| **Native Script** | Declarative rule set evaluated by the node. No Plutus VM required. Supports signatures and time-locks. |
-| **Plutus Script (Validator)** | Arbitrary logic executed in Plutus VM. Supports complex conditions and state checks. |
-
-👉 This lesson focuses on **native scripts**.
-
-### Key Concept
-
-- A **policy ID** = hash of the script  
-- Token identity = `policyId + assetName`
-
-> ⚠️ Tokens are permanently bound to their policy.
+- Completed Module 202 (basic Apollo transactions)
+- A funded preprod wallet with test ADA
+- A Blockfrost API key for preprod
 
 ---
 
-## 02 — How Apollo Models Minting
+## Background
 
-### API Methods
+A **policy ID** is the hash of the script that governs a token. Token identity on Cardano is `policyId + assetName`. Once minted under a policy, that binding is permanent.
 
-```go
-// Native scripts
-MintAssets(mintUnit Unit) *Apollo
+A `ScriptPubKey` native script creates a policy that permits minting only when a specific key signs the transaction. The policy ID is derived from the script, which in turn is built from your wallet's payment key hash.
 
-// Plutus scripts
-MintAssetsWithRedeemer(mintUnit Unit, redeemer Redeemer) *Apollo
+Minted tokens must be assigned to an output in the same transaction — you cannot mint into thin air.
+
+---
+
+## Setup
+
+```bash
+mkdir 203-native-mint && cd 203-native-mint
+go mod init 203-native-mint
+go get github.com/Salvionied/apollo
 ```
 
-### Unit Structure
-
-```go
-unit := apollo.NewUnit(
-    "a1b2c3...", // policy ID
-    "MyToken",   // asset name
-    1000,        // quantity (+ mint, - burn)
-)
-```
-
-> ⚠️ Minted tokens must be included in an output (`PayToAddressBech32`) or the transaction will fail.
-
 ---
 
-## 03 — Setup: Imports & Backend
+## Complete Minting Example
 
 ```go
 package main
 
 import (
-    "encoding/hex"
-    "fmt"
+	"encoding/hex"
+	"fmt"
 
-    "github.com/Salvionied/apollo"
-    "github.com/Salvionied/apollo/constants"
-    "github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
-
-    NativeScript "github.com/Salvionied/apollo/serialization/NativeScript"
-    Key          "github.com/Salvionied/apollo/serialization/Key"
+	"github.com/Salvionied/apollo"
+	"github.com/Salvionied/apollo/constants"
+	NativeScript "github.com/Salvionied/apollo/serialization/NativeScript"
+	"github.com/Salvionied/apollo/txBuilding/Backend/BlockFrostChainContext"
 )
 
 const (
-    BLOCKFROST_KEY = "previewXXXXXXXXXXXXXXXX"
-    MNEMONIC       = "your mnemonic..."
+	BLOCKFROST_KEY = "preprodYOUR_KEY_HERE"
+	MNEMONIC       = "word1 word2 word3 word4 word5 word6 word7 word8 word9 word10 word11 word12"
 )
-```
 
----
-
-## 04 — Native Script & Policy ID
-
-```go
-func buildNativeScript(vkey Key.VerificationKey) (NativeScript.NativeScript, string) {
-    pkh := vkey.PaymentKeyHash()
-
-    script := NativeScript.NativeScript{
-        Type:    NativeScript.ScriptPubkey,
-        KeyHash: pkh,
-    }
-
-    policyId := hex.EncodeToString(script.Hash())
-
-    return script, policyId
-}
-```
-
-### Optional: Time-Locked Policy
-
-```go
-timeLocked := NativeScript.NativeScript{
-    Type: NativeScript.ScriptAll,
-    Scripts: []NativeScript.NativeScript{
-        {
-            Type:    NativeScript.ScriptPubkey,
-            KeyHash: pkh,
-        },
-        {
-            Type: NativeScript.ScriptInvalidHereAfter,
-            Slot: 10_000_000,
-        },
-    },
-}
-```
-
----
-
-## 05 — Complete Minting Transaction
-
-```go
 func main() {
-    bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
-        constants.BLOCKFROST_BASE_URL_PREVIEW,
-        int(constants.PREVIEW),
-        BLOCKFROST_KEY,
-    )
-    if err != nil { panic(err) }
+	bfc, err := BlockFrostChainContext.NewBlockfrostChainContext(
+		constants.BLOCKFROST_BASE_URL_PREPROD,
+		int(constants.PREPROD),
+		BLOCKFROST_KEY,
+	)
+	if err != nil {
+		panic(err)
+	}
 
-    apollob := apollo.New(&bfc)
-    apollob, _ = apollob.SetWalletFromMnemonic(MNEMONIC, constants.PREVIEW)
-    apollob, _ = apollob.SetWalletAsChangeAddress()
+	apollob := apollo.New(&bfc)
+	apollob, err = apollob.SetWalletFromMnemonic(MNEMONIC, constants.PREPROD)
+	if err != nil {
+		panic(err)
+	}
+	apollob, err = apollob.SetWalletAsChangeAddress()
+	if err != nil {
+		panic(err)
+	}
 
-    utxos, _ := bfc.Utxos(*apollob.GetWallet().GetAddress())
+	// GetAddress().PaymentPart is []byte — the 28-byte payment key hash.
+	pkh := apollob.GetWallet().GetAddress().PaymentPart
+	script := NativeScript.NativeScript{
+		Tag:     NativeScript.ScriptPubKey,
+		KeyHash: pkh,
+	}
 
-    vkey := apollob.GetWallet().GetVerificationKey()
-    script, policyId := buildNativeScript(vkey)
+	// Hash() returns (serialization.ScriptHash, error).
+	// ScriptHash is [28]byte, so use [:] to get []byte for hex encoding.
+	scriptHash, err := script.Hash()
+	if err != nil {
+		panic(err)
+	}
+	policyId := hex.EncodeToString(scriptHash[:])
+	fmt.Println("Policy ID:", policyId)
 
-    mintUnit := apollo.NewUnit(policyId, "GimbalToken", 1_000_000)
+	mintUnit := apollo.NewUnit(policyId, "GimbalToken", 1_000_000)
 
-    apollob, err = apollob.
-        AddLoadedUTxOs(utxos...).
-        MintAssets(mintUnit).
-        AttachNativeScript(script).
-        AddRequiredSignerFromBech32(
-            apollob.GetWallet().GetAddress().ToBech32(),
-            true, false,
-        ).
-        PayToAddressBech32(
-            apollob.GetWallet().GetAddress().ToBech32(),
-            2_000_000,
-            mintUnit,
-        ).
-        Complete()
+	utxos, err := bfc.Utxos(*apollob.GetWallet().GetAddress())
+	if err != nil {
+		panic(err)
+	}
 
-    if err != nil { panic(err) }
+	apollob, _, err = apollob.
+		AddLoadedUTxOs(utxos...).
+		MintAssets(mintUnit).
+		AttachNativeScript(script).
+		AddRequiredSignerFromBech32(
+			apollob.GetWallet().GetAddress().String(),
+			true, false,
+		).
+		PayToAddressBech32(
+			apollob.GetWallet().GetAddress().String(),
+			2_000_000,
+			mintUnit,
+		).
+		Complete()
+	if err != nil {
+		panic(err)
+	}
 
-    apollob = apollob.Sign()
-    txId, _ := apollob.Submit()
+	apollob = apollob.Sign()
+	txId, err := apollob.Submit()
+	if err != nil {
+		panic(err)
+	}
 
-    fmt.Println("Tx:", hex.EncodeToString(txId.Payload))
+	fmt.Println("Tx hash:", hex.EncodeToString(txId.Payload))
 }
 ```
 
+Run it:
+
+```bash
+go run .
+```
+
+Check the transaction on [preprod.cardanoscan.io](https://preprod.cardanoscan.io). Confirm the minting event shows `GimbalToken` quantity `1000000` under your policy ID.
+
 ---
 
-## 06 — Burning Tokens
+## Burning Tokens
+
+Use a negative quantity. The tokens must already exist in a UTxO in `AddLoadedUTxOs`.
 
 ```go
 burnUnit := apollo.NewUnit(policyId, "GimbalToken", -500_000)
 
-tokenUtxo, _ := apollob.UtxoFromRef("txhash...", 0)
-
-apollob, err = apollob.
+apollob, _, err = apollob.
     AddLoadedUTxOs(utxos...).
-    AddInput(*tokenUtxo).
     MintAssets(burnUnit).
     AttachNativeScript(script).
     AddRequiredSignerFromBech32(
-        apollob.GetWallet().GetAddress().ToBech32(),
+        apollob.GetWallet().GetAddress().String(),
         true, false,
     ).
     Complete()
-```
-
-> ⚠️ Burn amount must not exceed available tokens.
-
----
-
-## 07 — Observing with Adder
-
-```json
-{
-  "txHash": "abc123...",
-  "mint": {
-    "policyId...": {
-      "GimbalToken": 1000000
-    }
-  },
-  "outputs": [
-    {
-      "address": "addr_test1...",
-      "value": {
-        "lovelace": 2000000,
-        "policyId...GimbalToken": 1000000
-      }
-    }
-  ]
+if err != nil {
+    panic(err)
 }
 ```
 
 ---
 
-## 08 — Step-by-Step Flow
+## Optional: Time-Locked Policy
 
-1. Set up Blockfrost context  
-2. Load wallet  
-3. Build native script → derive policy ID  
-4. Create mint unit  
-5. Build transaction  
-6. Sign & submit  
+A time-locked policy forbids minting after a specific slot. Once that slot passes, the policy is frozen — no one can ever mint or burn under it again.
 
----
+```go
+expirySlot := int64(10_000_000) // replace with a real future slot number
 
-## 09 — Exercises
+timeLocked := NativeScript.NativeScript{
+    Tag: NativeScript.ScriptAll,
+    NativeScripts: []NativeScript.NativeScript{
+        {
+            Tag:     NativeScript.ScriptPubKey,
+            KeyHash: pkh,
+        },
+        {
+            Tag:   NativeScript.InvalidHereafter,
+            After: expirySlot,
+        },
+    },
+}
 
-### A — Mint Token
+tlHash, err := timeLocked.Hash()
+if err != nil {
+    panic(err)
+}
+timedPolicyId := hex.EncodeToString(tlHash[:])
+```
 
-1. Set up backend  
-2. Derive policy ID  
-3. Mint `1,000,000` tokens  
-4. Send to your wallet  
-5. Verify on explorer  
-
-### B — Burn Half
-
-1. Locate token UTxO  
-2. Burn `500,000`  
-3. Use same policy  
-4. Verify negative mint  
-
-### C — Time-Locked Policy
-
-1. Get current slot  
-2. Create expiry policy  
-3. Mint before deadline  
-4. Try minting after (should fail)  
+Use `timeLocked` in place of `script` in the minting call. The transaction must be submitted before `expirySlot`.
 
 ---
 
-## 10 — Knowledge Check
+## Key Concepts
 
-- Understand native vs Plutus policies  
-- Know how policy ID is derived  
-- Can construct `Unit` correctly  
-- Can build mint & burn transactions  
-- Understand why outputs are required  
-- Can interpret mint field  
+| Concept | Explanation |
+|---------|-------------|
+| `ScriptPubKey` | Policy requires the matching key to sign |
+| `ScriptAll` | All sub-scripts must be satisfied |
+| `InvalidHereafter` | Minting forbidden at or after this slot |
+| Negative quantity | Burns tokens instead of minting |
 
 ---
 
-## 11 — What’s Next
+## Common Errors
 
-Next: **Plutus Minting Validators (203.3)**
+**`tokens not sent to output`** — every minted token must appear in an output. Include `mintUnit` as the third argument to `PayToAddressBech32`.
 
-- `MintAssetsWithRedeemer`
-- On-chain logic with Aiken
-- Advanced minting rules
+**`InsufficientFunds`** — outputs carrying native assets require at least ~2 ADA minimum. Use at least `2_000_000` lovelace.
+
+**`Policy ID mismatch`** — the policy ID is the script hash. Changing the key or expiry slot changes the hash, producing a different policy ID that cannot touch previously minted tokens.
+
+---
+
+## Summary
+
+- Build a `NativeScript` with your wallet's `PaymentPart` as the `KeyHash`.
+- `script.Hash()` returns `(serialization.ScriptHash, error)` — use `scriptHash[:]` to hex-encode it.
+- `MintAssets(unit)` + `AttachNativeScript(script)` + an output that receives the tokens.
+- Burning is identical with a negative quantity.
+- `ScriptAll` + `InvalidHereafter` creates a time-locked policy.
+
+In 203.3 you will mint tokens using a Plutus validator where minting rules are arbitrary on-chain logic.
