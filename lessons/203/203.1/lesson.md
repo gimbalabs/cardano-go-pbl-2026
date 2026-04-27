@@ -22,7 +22,7 @@ This lesson traces a single Aiken type through three layers:
 
 When your Go program sends data to a Cardano smart contract either as a datum or redeemer that data must be CBOR-encoded in exactly the right structure. The contract was compiled from Aiken source that defines precise types. If your Go code sends a differently-shaped value, the transaction will fail or the validator will reject it on-chain.
 
-The `plutus.json` blueprint ([CIP-57](https://cips.cardano.org/cip/CIP-57)) is the bridge. Aiken generates it automatically when you run `aiken build`. It describes every validator's datum and redeemer schema in a format your Go code can read.
+The `plutus.json` blueprint ([CIP-57](https://cips.cardano.org/cip/CIP-57)) is the bridge. Aiken generates it automatically when you run `aiken build`. It describes every validator's datum, redeemer schema and parameter formation if applicable in a format your Go code can read.
 
 ---
 
@@ -84,7 +84,6 @@ The spend handler unlocks funds when the transaction is signed by `owner` (from 
 Running `aiken build` produces `plutus.json`. Here is the exact output:
 
 ```json
-
 {
   "preamble": {
     "title": "emmanuel/lesson203_3",
@@ -177,45 +176,20 @@ Running `aiken build` produces `plutus.json`. Here is the exact output:
     }
   }
 }
-
 ```
 
 ### Reading the Blueprint
 
-| Field | Meaning |
-|-------|---------|
-| `validators[].title` | Fully qualified validator name (e.g. `hello_world.spend`). Use Ctrl+F to find it. |
-| `validator[].datum.schema` | Reference into `definitions` for the type shape, use cmd + click or ctrl + click to quickly access the datum definitions  |
+| Field                         | Meaning                                                                                                                   |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
+| `validators[].title`          | Fully qualified validator name (e.g. `hello_world.spend`). Use Ctrl+F to find it.                                         |
+| `validator[].datum.schema`    | Reference into `definitions` for the type shape, use cmd + click or ctrl + click to quickly access the datum definitions  |
 | `validator[].redeemer.schema` | AReference into `definitions` for the type shape. use cmd + click or ctrl + click to quickly access the datum definitions |
-| `compiledCode` | Hex-encoded CBOR script — the actual on-chain code. |
-| `hash` | Script hash. For spending validators: forms the script address. For minting validators: the policy ID. |
-| `definitions` | All type definitions used by datums and redeemers. |
+| `compiledCode`                | Hex-encoded CBOR script — the actual on-chain code.                                                                       |
+| `hash`                        | Script hash. For spending validators: forms the script address. For minting validators: the policy ID.                    |
+| `definitions`                 | All type definitions used by datums and redeemers.                                                                        |
 
 NOTE: In the case of parameterized validators, neither the compiled code nor its script hash is considered final until the parameters are fully applied. you would learn this in next Module lesson 204.2
-
-### Understanding Type Definitions
-
-| Blueprint field | What it means |
-|----------------|---------------|
-| `"dataType": "constructor"` | A record type. Encodes as a Plutus `Constr` (CBOR-tagged structure). |
-| `"index": 0` | Constructor variant. Single-variant types are always `0`. |
-| `"fields": [...]` | Ordered list of fields. **Order must match exactly.** |
-| `"#bytes"` | Byte array → `PlutusData{PlutusDataType: PlutusBytes, Value: []byte{...}}` |
-| `"#integer"` | Integer → `*big.NewInt(n)` from `math/big` |
-
----
-
-## Layer 2 → Layer 3: Blueprint to Go
-
-### Constructor Index → CBOR Tag
-
-| Constructor index | CBOR tag |
-|-------------------|----------|
-| 0 | 121 |
-| 1 | 122 |
-| N (0–6) | 121 + N |
-
-Single-variant record types are always index 0, tag 121.
 
 ### Code
 
@@ -228,9 +202,6 @@ import (
     "github.com/Salvionied/apollo/serialization/PlutusData"
 )
 
-// BuildDatum constructs the Datum for hello_world.
-// Blueprint: hello_world/Datum — constructor 0, fields: [owner: #bytes]
-// PlutusArray = tagged constructor; PlutusBytes = raw byte field.
 func BuildDatum(owner []byte) PlutusData.PlutusData {
     return PlutusData.PlutusData{
         PlutusDataType: PlutusData.PlutusArray,
@@ -244,9 +215,6 @@ func BuildDatum(owner []byte) PlutusData.PlutusData {
     }
 }
 
-// BuildRedeemer constructs the Redeemer for hello_world.
-// Blueprint: hello_world/Redeemer — constructor 0, fields: [msg: #bytes]
-// msg must be []byte("HelloSpendRedeemer") to satisfy the spend handler.
 func BuildRedeemer(msg []byte) PlutusData.PlutusData {
     return PlutusData.PlutusData{
         PlutusDataType: PlutusData.PlutusArray,
@@ -261,7 +229,7 @@ func BuildRedeemer(msg []byte) PlutusData.PlutusData {
 }
 
 func main() {
-    ownerPkh := make([]byte, 28) // replace with real 28-byte payment key hash
+    ownerPkh := make([]byte, 28)
     datum := BuildDatum(ownerPkh)
     redeemer := BuildRedeemer([]byte("HelloSpendRedeemer"))
 
@@ -269,6 +237,94 @@ func main() {
     fmt.Printf("Redeemer TagNr: %d\n", redeemer.TagNr)
 }
 ```
+
+### Understanding Type Definitions
+
+| Blueprint field             | What it means                                                              |
+| --------------------------- | -------------------------------------------------------------------------- |
+| `"dataType": "constructor"` | A record type. Encodes as a Plutus `Constr` (CBOR-tagged structure).       |
+| `"index": 0`                | Constructor variant. Single-variant types are always `0`.                  |
+| `"fields": [...]`           | Ordered list of fields. **Order must match exactly.**                      |
+| `"#bytes"`                  | Byte array → `PlutusData{PlutusDataType: PlutusBytes, Value: []byte{...}}` |
+
+---
+
+## Layer 2 → Layer 3: Blueprint to Go and reading plutus.json
+
+- If you look closely at the plutus.json, find definitions["lesson203_1/Datum"]. Here's what you'll see:
+
+```json
+"lesson203_1/Datum": {
+  "title": "Datum",
+  "anyOf": [
+    {
+      "title": "Datum",
+      "dataType": "constructor",
+      "index": 0,
+      "fields": [
+        {
+          "title": "owner",
+          "$ref": "#/definitions/aiken~1crypto~1VerificationKeyHash"
+        }
+      ]
+    }
+  ]
+}
+```
+
+Now follow the $ref for the owner field into definitions["aiken/crypto/VerificationKeyHash"]:
+
+```json
+"aiken/crypto/VerificationKeyHash": {
+  "title": "VerificationKeyHash",
+  "dataType": "bytes"
+}
+```
+
+So working backwards, the complete picture is:
+
+dataType: "constructor" → wrap everything in a PlutusArray with a CBOR tag
+index: 0 → tag number is 121 (see the constructor index table below)
+fields: [owner] → one field, a #bytes type, encoded as PlutusBytes
+
+```go
+func BuildDatum(owner []byte) PlutusData.PlutusData {
+    return PlutusData.PlutusData{
+        PlutusDataType: PlutusData.PlutusArray,  // "dataType": "constructor"
+        TagNr:          121,                      // "index": 0 → tag 121
+        Value: PlutusData.PlutusIndefArray{
+            PlutusData.PlutusData{
+                PlutusDataType: PlutusData.PlutusBytes, // "dataType": "bytes"
+                Value:          owner,
+            },
+        },
+    }
+}
+```
+
+The same exact reading process applies to BuildRedeemer, find definitions["lesson203_1/Redeemer"], trace the $ref for the msg field, observe it is also #bytes, and you get the same structure with a different payload `([]byte("HelloSpendRedeemer"))`.
+
+you can also use the same pattern to find these other types
+
+## Other PlutusData Types
+
+`#bytes` and `#constructor` are just two of the primitive types that can appear in a blueprint field. When reading any `definitions` block, you may encounter:
+
+| Blueprint `dataType` | What it represents        | Go encoding                                                             |
+| -------------------- | ------------------------- | ----------------------------------------------------------------------- |
+| `"integer"`          | Whole number              | `PlutusData{PlutusDataType: PlutusBigInt, Value: big.NewInt(n)}`           |
+| `"list"`             | Ordered sequence of items | `PlutusData{PlutusDataType: PlutusArray, Value: PlutusIndefArray{...}}` |
+| `"map"`              | Key-value pairs           | `PlutusData{PlutusDataType: PlutusMap, Value: ...}`                     |
+
+### Constructor Index → CBOR Tag
+
+| Constructor index | CBOR tag |
+| ----------------- | -------- |
+| 0                 | 121      |
+| 1                 | 122      |
+| N (0–6)           | 121 + N  |
+
+Single-variant record types are always index 0, tag 121.
 
 ---
 
@@ -281,10 +337,10 @@ pub type Datum {    →    "dataType": "constructor"   →    PlutusData{
   owner:                 "index": 0                         PlutusDataType: PlutusArray,
     VerificationKeyHash  "fields": [{                       TagNr: 121,
 }                          "dataType": "#bytes"             Value: PlutusIndefArray{
-                         }]                                   PlutusData{
-                                                               PlutusDataType: PlutusBytes,
-                                                               Value: owner,
-                                                             },
+                         }]                                  PlutusData.PlutusData{
+                                                                  PlutusDataType: PlutusData.PlutusBytes,
+                                                                  Value:          owner,
+                                                              },
                                                            }}
 ```
 
