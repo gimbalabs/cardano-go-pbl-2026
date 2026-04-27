@@ -14,7 +14,7 @@ This lesson traces a single Aiken type through three layers:
 
 - Completed Module 202 (basic Apollo transactions)
 - Familiarity with what a smart contract is: funds locked by a script, unlocked by meeting conditions
-- No Aiken experience required — you are reading Aiken output, not writing it
+- No Aiken experience required, you are reading Aiken output, not writing it
 
 ---
 
@@ -184,8 +184,8 @@ Running `aiken build` produces `plutus.json`. Here is the exact output:
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------- |
 | `validators[].title`          | Fully qualified validator name (e.g. `hello_world.spend`). Use Ctrl+F to find it.                                         |
 | `validator[].datum.schema`    | Reference into `definitions` for the type shape, use cmd + click or ctrl + click to quickly access the datum definitions  |
-| `validator[].redeemer.schema` | AReference into `definitions` for the type shape. use cmd + click or ctrl + click to quickly access the datum definitions |
-| `compiledCode`                | Hex-encoded CBOR script — the actual on-chain code.                                                                       |
+| `validator[].redeemer.schema` | Reference into `definitions` for the type shape. use cmd + click or ctrl + click to quickly access the datum definitions |
+| `compiledCode`                | Hex-encoded CBOR script, the actual on-chain code.                                                                       |
 | `hash`                        | Script hash. For spending validators: forms the script address. For minting validators: the policy ID.                    |
 | `definitions`                 | All type definitions used by datums and redeemers.                                                                        |
 
@@ -237,6 +237,100 @@ func main() {
     fmt.Printf("Redeemer TagNr: %d\n", redeemer.TagNr)
 }
 ```
+
+### Code Explanation and Breakdown
+
+#### 1. The `PlutusData` struct
+
+Every value sent to a Cardano smart contract — datum or redeemer — is encoded as a `PlutusData`. Apollo represents it as a single struct with three fields:
+
+```go
+PlutusData.PlutusData{
+    PlutusDataType: ...,   // what kind of value this is
+    TagNr:          ...,   // CBOR tag (only used for constructor types)
+    Value:          ...,   // the actual payload
+}
+```
+
+`PlutusDataType` is an enum that tells the CBOR encoder which wire format to use. You must set it correctly — the wrong type causes a silently malformed transaction body.
+
+---
+
+#### 2. The outer wrapper — `PlutusArray` + `TagNr: 121`
+
+```go
+PlutusDataType: PlutusData.PlutusArray,
+TagNr:          121,
+```
+
+In the blueprint, both `Datum` and `Redeemer` have `"dataType": "constructor"` with `"index": 0`. On-chain, a Plutus constructor is encoded as a **CBOR-tagged array**: the tag number identifies which variant of the type is being used, and the array holds the fields.
+
+The tag is `121`. Since both types here have `index: 0`, the tag is `121`. `PlutusArray` tells the encoder to emit a tagged array — not a plain list.
+
+> If you ever work with an enum type that has multiple variants, each variant gets a different `index` in the blueprint, and therefore a different `TagNr` in Go. Sending the wrong tag is a common on-chain failure.
+
+---
+
+#### 3. `PlutusIndefArray` — the field list
+
+```go
+Value: PlutusData.PlutusIndefArray{
+    PlutusData.PlutusData{ ... },
+},
+```
+
+`PlutusIndefArray` is a Go slice of `PlutusData` values that serialises as a **CBOR indefinite-length array** — the encoding Plutus constructors require. Each element in the slice corresponds to one field from the blueprint's `"fields"` array, **in the same order**. Here both `Datum` and `Redeemer` have exactly one field, so the `PlutusIndefArray` holds exactly one element.
+
+> Field order is positional, not named. If a constructor has three fields and you swap two of them in Go, the validator will see the wrong values and fail.
+
+---
+
+#### 4. The inner `PlutusBytes` — the actual payload
+
+```go
+PlutusData.PlutusData{
+    PlutusDataType: PlutusData.PlutusBytes,
+    Value:          owner,   // []byte — the 28-byte payment key hash
+}
+```
+
+Both fields (`owner` in `Datum`, `msg` in `Redeemer`) resolve to `"dataType": "#bytes"` in the blueprint. In Go this maps to `PlutusBytes` with a `[]byte` value. No `TagNr` is needed here bytes are a primitive type.
+
+For `BuildRedeemer`, the payload is the string `"HelloSpendRedeemer"` cast to a byte slice: `[]byte("HelloSpendRedeemer")`. The blueprint says `#bytes`, not a string — Go strings and byte slices are not the same when CBOR-encoded.
+
+**Multiple fields example** — if your Aiken type had two fields instead of one:
+
+```aiken
+pub type Datum {
+  owner: VerificationKeyHash,
+  deadline: Int,
+}
+```
+
+The blueprint would show `"fields"` with two entries (in that order), and the Go struct would mirror it exactly:
+
+```go
+func BuildDatum(owner []byte, deadline int64) PlutusData.PlutusData {
+    return PlutusData.PlutusData{
+        PlutusDataType: PlutusData.PlutusArray,
+        TagNr:          121,
+        Value: PlutusData.PlutusIndefArray{
+            PlutusData.PlutusData{
+                PlutusDataType: PlutusData.PlutusBytes,
+                Value:          owner,
+            },
+            PlutusData.PlutusData{
+                PlutusDataType: PlutusData.PlutusBigInt,
+                Value:          big.NewInt(deadline),
+            },
+        },
+    }
+}
+```
+
+The `PlutusIndefArray` grows by one element per field. Position matters — `owner` must come first because it is first in the blueprint's `fields` array. Swapping the two would produce a valid-looking transaction that the validator silently rejects.
+
+---
 
 ### Understanding Type Definitions
 
@@ -350,7 +444,7 @@ pub type Datum {    →    "dataType": "constructor"   →    PlutusData{
 
 1. What is the `title` of the validator I need? (e.g. `hello_world.spend`)
 2. Does it have a `datum`? Follow the `$ref` into `definitions`.
-3. Does it have a `redeemer`? Same — follow the `$ref`.
+3. Does it have a `redeemer`? Same step, follow the `$ref`.
 4. What is the `dataType`? (`constructor`, `list`, `map`, `bytes`, `integer`)
 5. What is the `index`? → CBOR tag = 121 + index.
 6. What are the `fields`? You must match this order exactly in Go.
@@ -374,4 +468,4 @@ pub type Datum {    →    "dataType": "constructor"   →    PlutusData{
 - In Go: `PlutusData` with tag `121 + index` and a `PlutusIndefArray` of fields in exact order.
 - `compiledCode` is what runs on-chain. `hash` is the validator's identity (script address or policy ID).
 
-In 203.2 you will mint tokens with a native script. In 203.3–203.6 you will use these exact `PlutusData` structures to interact with the hello_world validator — locking, unlocking, and minting.
+In 203.2 you will mint tokens with a native script. In 203.3–203.6 you will use these exact `PlutusData` structures to interact with the hello_world validator locking, unlocking, and minting.
