@@ -75,7 +75,7 @@ spendRedeemer := Redeemer.Redeemer{
 }
 ```
 
-For **minting** (used in 203.6):
+For **minting** (to be used in 203.6):
 ```go
 mintRedeemer := Redeemer.Redeemer{
     Tag: Redeemer.MINT,

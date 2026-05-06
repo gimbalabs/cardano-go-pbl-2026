@@ -1,6 +1,6 @@
 # SLT 203.3: I Can Build a Transaction That Attaches Data to a New Output on the Blockchain
 
-A UTxO on Cardano can carry a **datum** — structured data stored alongside the value. To interact with a smart contract, you must first **lock** funds at the contract address with a datum that encodes your intent. The validator reads that datum when you try to unlock the funds.
+A UTxO on Cardano can carry a **datum** arbritrary structured data stored alongside the value this feature is what makes the UTxO into the eUTxO giving it state. To interact with a spending smart contract, you must first **lock** funds at the contract address with a datum that encodes your intent. The validator reads that datum when you try to unlock the funds.
 
 This lesson covers building the lock transaction: sending ADA to the hello_world script address with an inline datum.
 
