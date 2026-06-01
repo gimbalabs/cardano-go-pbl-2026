@@ -96,10 +96,10 @@ Build transactions that interact with smart contracts.
 
 - **203.1**: I can trace how a type defined in Aiken appears in a blueprint file and in Go code.
 - **203.2**: I can build a transaction that mints or burns tokens using a native script (no smart contract required).
-- **203.3**: I can build a transaction that mints or burns tokens using a validator script (smart contract).
-- **203.4**: I can build a transaction that unlocks tokens held by a smart contract.
-- **203.5**: I can build a transaction that attaches data to a new output on the blockchain.
-- **203.6**: I can build a transaction that passes input data to a smart contract using a redeemer.
+- **203.3**: I can build a transaction that attaches data to a new output on the blockchain.
+- **203.4**: I can build a transaction that unlocks funds held by a smart contract.
+- **203.5**: I can build a transaction that passes input data to a smart contract using a redeemer.
+- **203.6**: I can build a transaction that mints or burns tokens using a validator script (smart contract).
 
 ### Module 204: Serializing Data
 

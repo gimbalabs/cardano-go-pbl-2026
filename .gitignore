@@ -1,7 +1,15 @@
 # Lesson Coach symlinks (machine-specific, recreated via setup script)
 knowledge
 research
-.claude/skills/
+.claude/skills/assess-slts
+.claude/skills/classify-lesson-types
+.claude/skills/compile
+.claude/skills/compound
+.claude/skills/course-workflow
+.claude/skills/draft-slts
+.claude/skills/gather-code-examples
+.claude/skills/gather-screenshots
+.claude/skills/self-assess-readiness
 
 # OS
 .DS_Store
@@ -9,3 +17,4 @@ research
 # Editor
 *.swp
 *~
+.obsidian/
